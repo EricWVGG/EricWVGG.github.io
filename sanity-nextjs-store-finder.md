@@ -12,14 +12,12 @@ You don’t need to know much about Google Maps, but [you will need an API key](
 
 We all live in dependency hell!
 
-{% raw %}
 ```
 npm install google-map-react usehooks-ts
 ```
 
 In your .env file, add your Google Maps API key:
 
-{% raw %}
 ```
 NEXT_PUBLIC_GOOGLE_MAPS_KEY=some-string-from-google
 ```
@@ -153,6 +151,42 @@ I’ve added "insertion points" for the latter steps; just ignore them for now.
 
 ### Basic map with pins
 
+#### Pin component
+
+We’ll need a component for our Pin. Create the following file `Pin.tsx`:
+
+```typescript
+'use client'
+
+interface PinProps {
+  lat: number
+  lng: number;
+  onClickAction?: any // yes I'm sometimes lazy about onClick types… they’re hard!
+}
+{% raw %}
+export const Pin = ({ lat, lng, onClickAction }: PinProps) => (
+  <div
+    style={{
+      position: 'relative',
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      width: '30px',
+      height: '30px',
+      transform: 'translateX(-50%) translateY(-50%)',
+      background: 'magenta',
+      color: 'white'
+    }} 
+    lat={lat}
+    lng={lng}
+    onClick={onClickAction}
+  >x</div>
+)
+{% endraw %}
+```
+
+I like to use garish colors for placeholder styles; feel free to add your own custom styles, or delete them all and use Tailwind if you’re some kind of animal.
+
 #### Map component
 
 Create a new component called `Map.tsx`:
@@ -185,9 +219,8 @@ const UnhydratedMap = ({ locations }: { locations: Sanity.MapLocationsQueryResul
   // insert: clusterizer
 
   // insert: cluster click action
-
-  return (
 {% raw %}
+  return (
     <main
       // see NOTE 1
       style={{
@@ -223,10 +256,9 @@ const UnhydratedMap = ({ locations }: { locations: Sanity.MapLocationsQueryResul
         {`.gm-style div > img {position: absolute;}`}
       </style>
     </main>
-{% endraw %}
   )
 }
-
+{% endraw %}
 // insert: cluster marker type
 
 export const Map = dynamic(() => Promise.resolve(UnhydratedMap), { ssr: false })
@@ -245,39 +277,6 @@ export const Map = dynamic(() => Promise.resolve(UnhydratedMap), { ssr: false })
 Google Maps introduces a lot of dependencies into your project. By using `next/dynamic`, this stuff is kept outside your usual site javascript payload, and only loaded on demand.
 
 Technically it’s not necessary; you may need to remove that if you’re using a completely static NextJS build.
-
-#### Pin component
-
-We’ll also need a component for our Pin. Create the following file `Pin.tsx`:
-
-```typescript
-'use client'
-
-interface PinProps {
-  lat: number
-  lng: number;
-  onClickAction?: any // yes I'm sometimes lazy about onClick types… they’re hard!
-}
-
-export const Pin = ({ lat, lng, onClickAction }: PinProps) => (
-  <div
-{% raw %}
-    style={{
-      position: 'relative',
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-      width: '30px',
-      height: '30px',
-      transform: 'translateX(-50%) translateY(-50%)',
-    }} 
-{% endraw %}
-    lat={lat}
-    lng={lng}
-    onClick={onClickAction}
-  />
-)
-```
 
 That’s it, you should have a working map with pins now. If that’s all you wanted, 
 
@@ -299,23 +298,22 @@ interface PopupProps {
   lng?: number;
   location?: Member<Sanity.MapLocationsQueryResult>
 }
-
+{% raw %}
 export const Popup = ({ lat, lng, location }: PopupProps) => (
   <div
     lat={lat}
     lng={lng}
-{% raw %}
     style={{
       display: (!!lat && !!lng) ? 'block' : 'none',
       background: 'black',
       foreground: 'white'
     }} 
-{% endraw %}
   >
     <div><strong>{location?.name}</strong></div>
     <div><em>{location?.streetAddress}</em></div>
   </div>
 )
+{% endraw %}
 ```
 
 #### Add the Popup and functionality to the Map component.
@@ -356,7 +354,6 @@ When multiple pins are close to each other on a map, they become indiscernible a
 
 We’ll need a `<Cluster />` component. It’s very similar to the `<Pin />` component. Create `Cluster.tsx`:
 
-{% raw %}
 ```typescript
 'use client'
 
@@ -370,12 +367,12 @@ interface ClusterProps {
 
 export const Cluster = ({ lat, lng, pointCount, totalPoints, onClickAction }: ClusterProps) => {
   const length = 40 + (pointCount / totalPoints) * 10
+{% raw %}
   return (
     <div
       lat={lat}
       lng={lng}
       onClick={onClickAction}
-{% raw %}
       style={{
         width: length.toString() + 'px',
         height: length.toString() + 'px',
@@ -389,10 +386,10 @@ export const Cluster = ({ lat, lng, pointCount, totalPoints, onClickAction }: Cl
         color: 'white',
         fontSize: '12px',
       }} 
-{% endraw %}
     >
       x{pointCount}
     </div>
+{% endraw %}
   )
 }
 ```
