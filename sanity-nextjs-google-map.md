@@ -219,10 +219,11 @@ const UnhydratedMap = ({ locations }: { locations: Sanity.MapLocationsQueryResul
   // insert: cluster hook
 
   // insert: cluster click action
+  
   return (
     <main
-      // see NOTE 1
       style={{
+        // see NOTE 1
         height: width < 744 ? "80dvh" : "63dvw",
         width: "100%"
       }} 
@@ -344,9 +345,7 @@ Replace `{/* insert: popup pin clicks */}` with:
 onClickAction={() => setActiveLocation(mapItem.location)}
 ```
 
-Recap: we're now tracking an “active location”. Upon clicking a map pin, that location is set.
-
-The popup dynamically keeps `activeLocation`, and hides itself if no lat/lng is selected.
+Recap: we're now tracking an “active location”. Upon clicking a map pin, that location is set. The popup `activeLocation` to derive its copy, and hides itself if no lat/lng is selected.
 
 ## Clusters
 
@@ -370,15 +369,11 @@ interface ClusterProps {
   onClickAction: () => void
 }
 
-const MAX_CLUSTER_SIZE = 100
 const MIN_CLUSTER_SIZE = 40
-const CLUSTER_SIZE_INCREMENT = 10
+const MAX_CLUSTER_SIZE = 100
 
 export const Cluster = ({ lat, lng, pointCount, totalPoints, onClickAction }: ClusterProps) => {
-  const diameter = min(
-    MAX_CLUSTER_SIZE,
-    MIN_CLUSTER_SIZE + (pointCount / totalPoints) * CLUSTER_SIZE_INCREMENT
-  )
+  const diameter = MIN_CLUSTER_SIZE + (pointCount / totalPoints) * (MAX_CLUSTER_SIZE - MIN_CLUSTER_SIZE)
   return (
     <div
       lat={lat}
