@@ -228,6 +228,20 @@ const UnhydratedMap = ({ locations }: { locations: Sanity.MapLocationsQueryResul
 export const Map = dynamic(() => Promise.resolve(UnhydratedMap), { ssr: false })
 ```
 
+#### Important fixes here for unexpected behaviors
+
+<strong>NOTE 1</strong>: Google maps requires that the width and height of the map is _explicitly set in the style attribute_. It doesn't have to be in pixels — you'll see that I'm using dvw and dvh units below — but it does have to be in a `style=` attribute. <em>Putting it in a `className` will not work!</em>
+
+<strong>NOTE 2</strong>: By default, Google makes certain locations like public parks clickable. That can lead to unexpected results if you have a map pin near one of these locations. `clickableIcons: false` fixes that.
+
+<strong>NOTE 3</strong>: [Embedded maps may have a missing row of map tiles on the bottom row.](https://stackoverflow.com/questions/41544151/google-maps-missing-row-of-tiles-on-chrome) It's been an issue for years. That style declaration fixes it.
+
+#### What’s this about next/dynamic?
+
+Google Maps introduces a lot of dependencies into your project. By using `next/dynamic`, this stuff is kept outside your usual site javascript payload, and only loaded on demand.
+
+Technically it’s not necessary; you may need to remove that if you’re using a completely static NextJS build.
+
 #### Pin component
 
 We’ll also need a component for our Pin. Create the following file `Pin.tsx`:
@@ -259,19 +273,7 @@ export const Pin = ({ lat, lng, onClickAction }: PinProps) => (
 )
 ```
 
-#### Important fixes here for unexpected behaviors
-
-<strong>NOTE 1</strong>: Google maps requires that the width and height of the map is _explicitly set in the style attribute_. It doesn't have to be in pixels — you'll see that I'm using dvw and dvh units below — but it does have to be in a `style=` attribute. <em>Putting it in a `className` will not work!</em>
-
-<strong>NOTE 2</strong>: By default, Google makes certain locations like public parks clickable. That can lead to unexpected results if you have a map pin near one of these locations. `clickableIcons: false` fixes that.
-
-<strong>NOTE 3</strong>: [Embedded maps may have a missing row of map tiles on the bottom row.](https://stackoverflow.com/questions/41544151/google-maps-missing-row-of-tiles-on-chrome) It's been an issue for years. That style declaration fixes it.
-
-#### What’s this about next/dynamic?
-
-Google Maps introduces a lot of dependencies into your project. By using `next/dynamic`, this stuff is kept outside your usual site javascript payload, and only loaded on demand.
-
-Technically it’s not necessary; you may need to remove that if you’re using a completely static NextJS build.
+That’s it, you should have a working map with pins now. If that’s all you wanted, 
 
 ### Popups
 
@@ -331,7 +333,7 @@ replace `{/* insert: popup component */}` with:
 replace `/* insert: popup pin clicks */` with:
 
 ```typescript
-onClick={() => setActiveLocation(mapItem.location)}
+onClickAction={() => setActiveLocation(mapItem.location)}
 ```
 
 Recap: we're now tracking an “active location”. Upon clicking a map pin, that location is set.
