@@ -224,11 +224,13 @@ export const Map = ({ locations }: { locations: Sanity.MapLocationsQueryResult }
       </GoogleMapReact>
       
       {/* Google Maps bug fix, see below */}
-      <style type="text/css" dangerouslySetInnerHTML={{__html: `
-        .gm-style div > img {
-          position: absolute;
-        }
-      `}}>
+      <style type="text/css">
+        {`
+          .gm-style div > img {
+            position: absolute;
+          }
+        `}
+      </style>
     </main>
   )
 }
