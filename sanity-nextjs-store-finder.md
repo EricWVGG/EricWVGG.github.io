@@ -2,19 +2,25 @@
 
 I’ve been asked to install “store locator” widgets a few times over the years. I was surprised to learn that it’s even a product that people pay for…
 
-This tutorial assumes you have basic experience in NextJS, Sanity, and Typescript, and that Sanity is set up for automatic type generation. (If you aren't using that last one, you can replace the Sanity.Whatever types with `any` or manually written types… but boy you are missing out.)
+This tutorial assumes you have basic experience in NextJS, Sanity, and Typescript, and that Sanity is set up for automatic type generation. (If you aren't using that last one, you can replace the Sanity.Whatever types with `any` or manually written types… but boy you are missing out.) And if you’re not using NextJS, these instructions should be pretty easy to adapt.
 
-I’ll assume you know little or nothing about Google Maps, though.
+I’ll assume you know little or nothing about Google Maps.
 
 // this is a first-draft haven’t tested this code yet
 
-## Dependencies
+## Dependencies and .env
 
-Yup React developers love us some dependency hell, let's go…
+We all live in dependency hell, let's go…
+```
+npm install google-map-react usehooks-ts
+```
 
+In your .env file, add your Google Maps API key:
 ```
-pn install google-map-react usehooks-ts
+NEXT_PUBLIC_GOOGLE_MAPS_KEY=some-string-from-google
 ```
+
+// todo: dig up instructions for creating above
 
 ## Add a map location schema to Sanity
 
@@ -23,7 +29,6 @@ You’ll need to create a basic schema in Sanity to store the map locations.
 ```typescript
 import { defineField, defineType } from "sanity"
 
-// This is our new document type…
 export const mapLocationSchema = defineType({
   name: "mapLocation",
   title: "Stockist",
@@ -73,7 +78,7 @@ export const mapLocationSchema = defineType({
       fieldset: "coordinates",
     }),
   ],
-  // create a “coordinates” field set to keep things tidy
+  // a “coordinates” grouping to keep things tidy
   fieldsets: [
     {
       title: "Coordinates",
@@ -94,7 +99,7 @@ import { mapLocationSchema } from "./mapLocationSchema"
 
 export const schema: { types: SchemaTypeDefinition[] } = {
   types: [
-    // ... the rest of your schema,
+    // … your existing schema,
     mapLocationSchema,
   ],
 }
@@ -105,47 +110,18 @@ And create a Groq query for retrieval: `mapLocationsQuery.ts`
 import { defineQuery } from "next-sanity"
 
 export const mapLocationsQuery = defineQuery(`
-  *[_type == 'mapLocation'] {
-    _id
-  }
+  *[_type == 'mapLocation']
 `)
-```
-
-## retrieve the data in NextJS
-
-### .env and constants
-
-Todo: instructions on creating a key
-
-In your `.env` file, add your Google Maps API key:
-
-```
-NEXT_PUBLIC_GOOGLE_MAPS_KEY=some-string-from-google
-```
-
-You’ll want some default values for the map. If you keep a global constants file somewhere, add these here; otherwise they can just go in place of the `import {...} from @/const` declaration in the `Map` component below.
-
-```
-export const MAP_DEFAULT_LAT = 41.8277584
-export const MAP_DEFAULT_LNG = -87.6620778
-export const MAP_DEFAULT_ZOOM = 10
-export const MAP_CLUSTER_RADIUS = 120
-export const MAP_MAX_ZOOM = 20
-export const GOOGLE_MAPS_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY
 ```
 
 ## NextJS Page
 
-Create a new route in NextJS (I’m assuming you’re using the App Router here).
+I’m assuming you’re using the App Router here, and use some kind of alias imports. If you’re not using alias imports, replace `@/` below with hard-coded paths to your Sanity client, the query you wrote, and the `Map.tsx` file you'll be making next.
 
-1. create a folder in `/app` called `/locations`.
-2. create a file in `/locations` called `page.tsx`
-3. draft the file thusly:
-
-```
-import { sanityFetch } from "@/sanity/lib/live" // < this is wherever you load your Sanity client from
-import { mapLocationsQuery } from "@/sanity/queries" // < this is wherever you keep your Sanity queries
-import { Map } from "@/ui" // < this is wherever you export React components from
+Create `/app/locations/page.tsx`:
+```typescript
+import { sanityFetch, mapLocationsQuery } from "@/sanity"
+import { Map } from "@/ui"
 
 export default async function MapLocationsPage() {
   const { data } = await sanityFetch({
@@ -160,32 +136,36 @@ export default async function MapLocationsPage() {
 
 ## React components
 
-### Map and Pin components
-
 We're going to do this in three steps…
 1. Make a map that shows pins.
 2. Make a popup for pin details.
 3. Add "clusters" for closely set pins.
 
-I’ve added "insertion points" for the latter steps below; just ignore them for now.
+If all you want is a map with pins, steps 2 and 3 are totally optional! I’ve added "insertion points" for the latter steps; just ignore them for now.
+
+### Basic map with pins
+
+#### Map component
 
 Create a new component called `Map.tsx`:
 ```typescript
-"use client"
+'use client'
 
-import { useState, useMemo, useRef } from "react"
-import { useWindowSize } from "usehooks-ts"
-import { MAP_DEFAULT_LAT, MAP_DEFAULT_LNG, MAP_DEFAULT_ZOOM, GOOGLE_MAPS_KEY, MAP_CLUSTER_RADIUS, MAP_MAX_ZOOM } from "@/const" // see above
+import { useState, useMemo, useRef } from 'react'
+import { useWindowSize } from 'usehooks-ts'
+import { MAP_DEFAULT_LAT, MAP_DEFAULT_LNG, MAP_DEFAULT_ZOOM, GOOGLE_MAPS_KEY, MAP_CLUSTER_RADIUS, MAP_MAX_ZOOM } from '@/const' // see above
 import { Pin } from './Pin'
 // insert: popup imports
 // insert: cluster imports
 
-export const Map = ({ locations }: { locations: Sanity.MapLocationsQueryResult }) => {
-  /*
-    Google maps requires that the width and height of the map is _explicitly set in the style attribute_.
-    It doesn't have to be in pixels — you'll see that I'm using dvw and dvh units below — but it does have to be in "style".
-    Putting it in a className will not work!
-  */
+export const MAP_DEFAULT_LAT = 41.8277584
+export const MAP_DEFAULT_LNG = -87.6620778
+export const MAP_DEFAULT_ZOOM = 10
+export const MAP_CLUSTER_RADIUS = 120
+export const MAP_MAX_ZOOM = 20
+export const GOOGLE_MAPS_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY
+
+const UnhydratedMap = ({ locations }: { locations: Sanity.MapLocationsQueryResult }) => {
   const { width } = useWindowSize()
   
   // insert: popup states
@@ -199,12 +179,18 @@ export const Map = ({ locations }: { locations: Sanity.MapLocationsQueryResult }
   // insert: cluster click action
 
   return (
-    <main style={{ height: width < 744 ? "80dvh" : "63dvw", maxHeight: "80dvh", width: "100%" }}>
-      {/* that’s the style attribute I warned you about ^ */}
+    <main
+      // see NOTE 1
+      style=\{\{
+        height: width < 744 ? "80dvh" : "63dvw",
+        width: "100%"
+      \}\}
+    >
       <GoogleMapReact
         bootstrapURLKeys={{ key: googleMapsKey }}
         defaultZoom={defaultZoom}
         options={{
+          // see NOTE 2
           clickableIcons: false,
         }}
         /* insert: cluster map capabilities */
@@ -223,37 +209,35 @@ export const Map = ({ locations }: { locations: Sanity.MapLocationsQueryResult }
         {/* insert: popup component */}
       </GoogleMapReact>
       
-      {/* Google Maps bug fix, see below */}
+      {/* see NOTE 3 */}
       <style type="text/css">
-        {`
-          .gm-style div > img {
-            position: absolute;
-          }
-        `}
+        {`.gm-style div > img {position: absolute;}`}
       </style>
     </main>
   )
 }
 
 // insert: cluster marker type
+
+export const Map = dynamic(() => Promise.resolve(UnhydratedMap), { ssr: false })
 ```
 
-There’s two fixes here for unexpected behaviors. By default, Google makes certain locations like public parks clickable. That can lead to unexpected results if you have a map pin near one of these locations. `clickableIcons: false` fixes that.
-
-That last style tag is an important bug fix. [Embedded maps map have a missing row of map tiles on the bottom row.](https://stackoverflow.com/questions/41544151/google-maps-missing-row-of-tiles-on-chrome) It's been an issue for years. You can put this fix in a style tag as per above, or move the style into your global stylesheet (recommended).
+#### Pin component
 
 We’ll also need a component for our Pin. Create the following file `Pin.tsx`:
 
 ```typescript
+'use client'
+
 interface PinProps {
   lat: number
   lng: number;
-  onClick?: any // yes I'm sometimes lazy about onClick types
+  onClickAction?: any // yes I'm sometimes lazy about onClick types… they’re hard!
 }
 
-export const Pin = ({ lat, lng, onClick }: PinProps) => (
+export const Pin = ({ lat, lng, onClickAction }: PinProps) => (
   <div 
-    style={{
+    style=\{\{
       position: 'relative',
       display: 'flex',
       justifyContent: 'center',
@@ -261,47 +245,41 @@ export const Pin = ({ lat, lng, onClick }: PinProps) => (
       width: '30px',
       height: '30px',
       transform: 'translateX(-50%) translateY(-50%)',
-    }} 
+    \}\} 
     lat={lat} 
     lng={lng} 
-    onClick={onClick} 
+    onClick={onClickAction} 
   />
 )
 ```
 
-This is the basics, you should have a working map now. 
+#### Important fixes here for unexpected behaviors
 
-### Make the Map dynamic
+<strong>NOTE 1</strong>: Google maps requires that the width and height of the map is _explicitly set in the style attribute_. It doesn't have to be in pixels — you'll see that I'm using dvw and dvh units below — but it does have to be in a `style=` attribute. <em>Putting it in a `className` will not work!</em>
 
-Since this map has a pretty heavy payload of dependencies, we're going to use `next/dynamic` to dynamically load the necessary javascript upon page load.
+<strong>NOTE 2</strong>: By default, Google makes certain locations like public parks clickable. That can lead to unexpected results if you have a map pin near one of these locations. `clickableIcons: false` fixes that.
 
-First, add this import up top:
-```typescript
-import dynamic from "next/dynamic"
-```
+<strong>NOTE 3</strong>: [Embedded maps may have a missing row of map tiles on the bottom row.](https://stackoverflow.com/questions/41544151/google-maps-missing-row-of-tiles-on-chrome) It's been an issue for years. That style declaration fixes it.
 
-Replace this line:
-```
-// old: export const Map = ({ locations }: { locations: Sanity.MapLocationsQueryResult }) => {
-const UnhydratedMap = ({ locations }: { locations: Sanity.MapLocationsQueryResult }) => {
-```
+#### What’s this about next/dynamic?
 
-And add this at the bottom of the document:
-```
-export const Map = dynamic(() => Promise.resolve(UnhydratedMap), { ssr: false })
-```
+Google Maps introduces a lot of dependencies into your project. By using `next/dynamic`, this stuff is kept outside your usual site javascript payload, and only loaded on demand.
 
-Easy! You can stop now if that’s all you want out of this project, but popups and clusters are usually desirable…
+Technically it’s not necessary; you may need to remove that if you’re using a completely static NextJS build.
 
 ### Popups
 
 Let's make a popup that shows a name and address when the user clicks on a pin.
+
+#### Popup Component
 
 When I built this, my first impulse was to put a popup inside each pin with it's own show/hide state. That approach doesn’t scale well, it’s not uncommon to have hundreds of pins (more on that when we get to clusters).
 
 So instead, we're going to make one `<Popup />` component, with a dynamic position. Create `Popup.tsx`:
 
 ```typescript
+'use client'
+
 interface PopupProps {
   lat?: number;
   lng?: number;
@@ -312,11 +290,11 @@ export const Popup = ({ lat, lng, location }: PopupProps) => (
   <div
     lat={lat}
     lng={lng}
-    style={{
+    style=\{\{
       display: (!!lat && !!lng) ? 'block' : 'none',
       background: 'black',
       foreground: 'white'
-    }}
+    \}\}
   >
     <div><strong>{location?.name}</strong></div>
     <div><em>{location?.streetAddress}</em></div>
@@ -324,7 +302,7 @@ export const Popup = ({ lat, lng, location }: PopupProps) => (
 )
 ```
 
-Now let’s add the Popup and functionality to the Map component.
+#### Add the Popup and functionality to the Map component.
 
 replace `// insert: popup imports` with:
 ```typescript
@@ -358,9 +336,53 @@ The popup dynamically keeps `activeLocation`, and hides itself if no lat/lng is 
 
 When multiple pins are close to each other on a map, they become indiscernible and unclickable. If you're dealing with even more than a handful of pins, this becomes necessary fast.
 
-Add these dependencies:
+#### Cluster component
+
+We’ll need a `<Cluster />` component. It’s very similar to the `<Pin />` component. Create `Cluster.tsx`:
+
+```typescript
+'use client'
+
+interface ClusterProps {
+  lat: number;
+  lng: number;
+  pointCount: number;
+  totalPoints: number;
+  onClickAction: any
+}
+
+export const Cluster = ({ lat, lng, pointCount, totalPoints, onClickAction }: ClusterProps) => {
+  const length = 40 + (pointCount / totalPoints) * 10
+  return (
+    <div
+      lat={lat}
+      lng={lng}
+      onClick={onClickAction}
+      style=\{\{
+        width: length.toString() + 'px',
+        height: length.toString() + 'px',
+        position: 'relative',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        transform: 'translateX(-50%) translateY(-50%)',
+        borderRadius: '9999px',
+        background: 'blue',
+        color: 'white',
+        fontSize: '12px',
+      \}\}
+    >
+      x{pointCount}
+    </div>
+  )
+}
 ```
-pn install supercluster use-supercluster
+
+#### Add clusters to `<Map />` component
+
+There’s a lot of steps here, so I’ve done my best to make them very granular. First, add these dependencies to the project:
+```
+npm install supercluster use-supercluster
 ```
 
 Replace `// insert: cluster imports` with:
@@ -378,17 +400,6 @@ const mapRef = useRef<any>(null)
 ```
 
 Instead of simply mapping over the locations, we instead need to map over structured points that can be read by SuperCluster. Since the calculation isn’t quite cheap, we’ll use `useMemo()` to emsmarten it.
-
-Replace `// insert: cluster marker type` with:
-```typescript
-interface MarkerProperties {
-  cluster: boolean
-  cluster_id?: number
-  point_count?: number
-  point_count_abbreviated?: number
-  locationData: Member<Sanity.MapLocationsQueryResult>
-}
-```
 
 Replace `// insert: cluster points memo` with:
 ```typescript
@@ -409,7 +420,18 @@ const points = useMemo(
 )
 ```
 
-Now we’ll set up our “clusterizer”. Replace `// insert: cluster hook` with:
+And replace `// insert: cluster marker type` with:
+```typescript
+interface MarkerProperties {
+  cluster: boolean
+  cluster_id?: number
+  point_count?: number
+  point_count_abbreviated?: number
+  locationData: Member<Sanity.MapLocationsQueryResult>
+}
+```
+
+Now we’ll set up our “clusterizer” (yes, it’s really called that). Replace `// insert: cluster hook` with:
 ```typescript
 const { clusters, supercluster } = useSupercluster({
   points,
@@ -419,7 +441,7 @@ const { clusters, supercluster } = useSupercluster({
 })
 ```
 
-We’ll need a click action. Replace `// insert: cluster click action` with:
+We’ll need a click action for the cluster markers. Replace `// insert: cluster click action` with:
 
 ```typescript
 const zoomOnClusterAction = (clusterId: number | string, lat: number, lng: number) => {
@@ -467,14 +489,14 @@ We need to replace the location pins with a mix of clusters and pins. Replace th
       lng={longitude} 
       pointCount={pointCount} 
       totalPoints={points.length}
-      onClick={() => zoomOnCluster(mapItem.id!, latitude, longitude)} 
+      onClickAction={() => zoomOnCluster(mapItem.id!, latitude, longitude)} 
     />
   ) : (
     <Pin 
       key={`marker-${i}`} 
       lat={latitude} 
       lng={longitude} 
-      onClick={() => setActiveLocation(mapItem.location)}
+      onClickAction={() => setActiveLocation(mapItem.location)}
     />
   )
 })}
@@ -482,39 +504,4 @@ We need to replace the location pins with a mix of clusters and pins. Replace th
 
 I hope that's pretty straightforward: `useSuperCluster` generates a new mix of Cluster and Pin items; output the correct components accordingly.
 
-Finally, we’ll need a `<Cluster />` component, very similar to the `<Pin />` component. Create `Cluster.tsx`:
-
-```typescript
-interface ClusterProps {
-  lat: number;
-  lng: number;
-  pointCount: number;
-  totalPoints: number;
-  onClick: any
-}
-
-export const Cluster = ({ lat, lng, pointCount, totalPoints, ...props }: ClusterProps) => {
-  const length = 40 + (pointCount / totalPoints) * 10
-  return (
-    <div
-      {...props}
-      style={{
-        width: length.toString() + 'px',
-        height: length.toString() + 'px',
-        position: 'relative',
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        transform: 'translateX(-50%) translateY(-50%)',
-        borderRadius: '9999px',
-        background: 'blue',
-        color: 'white',
-        fontSize: '12px',
-      }}
-    >
-      x{pointCount}
-    </div>
-  )
-}
-```
-
+Hey cool we’re done. Give it a try.
