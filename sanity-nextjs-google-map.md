@@ -234,14 +234,14 @@ const UnhydratedMap = ({ locations }: { locations: Sanity.MapLocationsQueryResul
           // see NOTE 2
           clickableIcons: false,
         }} 
-        /* insert: cluster map capabilities */
+        {/* insert: cluster map capabilities */}
       >
         {locations.map(({_id, latitude, longitude}) => (
           <Pin
             key={_id}
             lat={latitude}
             lng={longitude}
-            /* insert: popup pin clicks */
+            {/* insert: popup pin clicks */}
           />
         ))}
 
@@ -338,7 +338,7 @@ Replace `{/* insert: popup component */}` with:
 <Popup location={activeLocation || undefined} lat={activeLocation?.geoLocation?.latitude} lng={activeLocation?.geoLocation?.longitude} />
 ```
 
-Replace `/* insert: popup pin clicks */` with:
+Replace `{/* insert: popup pin clicks */}` with:
 
 ```typescript
 onClickAction={() => setActiveLocation(mapItem.location)}
@@ -497,7 +497,7 @@ const zoomOnClusterAction = (clusterId: number | string, lat: number, lng: numbe
 }
 ```
 
-We need to give the Map the ability to update the zoom and bounds from our code. Replace `/* insert: cluster map capabilities */` with these attributes:
+We need to give the Map the ability to update the zoom and bounds from our code. Replace `{/* insert: cluster map capabilities */}` with these attributes:
 
 ```typescript
 yesIWantToUseGoogleMapApiInternals
