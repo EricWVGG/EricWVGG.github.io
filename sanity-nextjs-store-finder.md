@@ -1,8 +1,8 @@
 # Building a Store Finder with NextJS, Google Maps and Sanity
 
-I’ve been asked to install “store locator” widgets a few times over the years. I was surprised to learn that it’s even a product that people pay for…
+I’ve been asked to install “store locator” widgets a few times over the years. I was surprised to learn that it’s even a product that people pay for! In this house we build our own shit.
 
-This tutorial assumes you have basic experience in NextJS, Sanity, and Typescript, and that Sanity is set up for automatic type generation. (If you aren't using that last one, you can replace the Sanity.Whatever types with `any` or manually written types… but boy you are missing out.) And if you’re not using NextJS, these instructions should be pretty easy to adapt.
+This tutorial assumes you have basic experience in NextJS, Sanity, and Typescript; and that Sanity is set up for automatic type generation. (If you aren't using that last one, you can replace the `Sanity.whatever` types with `unknown` or manually written types… but [boy you are missing out](https://www.sanity.io/docs/apis-and-sdks/sanity-typegen). And if you’re not using NextJS, these instructions should be pretty easy to adapt.
 
 You don’t need to know much about Google Maps, but [you will need an API key](https://developers.google.com/maps/documentation/javascript/get-api-key).
 
