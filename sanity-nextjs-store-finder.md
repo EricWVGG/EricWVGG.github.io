@@ -12,12 +12,14 @@ You don’t need to know much about Google Maps, but [you will need an API key](
 
 We all live in dependency hell!
 
+{% raw %}
 ```
 npm install google-map-react usehooks-ts
 ```
 
 In your .env file, add your Google Maps API key:
 
+{% raw %}
 ```
 NEXT_PUBLIC_GOOGLE_MAPS_KEY=some-string-from-google
 ```
@@ -185,12 +187,13 @@ const UnhydratedMap = ({ locations }: { locations: Sanity.MapLocationsQueryResul
   // insert: cluster click action
 
   return (
+{% raw %}
     <main
       // see NOTE 1
       style={{
         height: width < 744 ? "80dvh" : "63dvw",
         width: "100%"
-      /\}\}/ 
+      }} 
     >
       <GoogleMapReact
         bootstrapURLKeys={{ key: googleMapsKey }}
@@ -198,7 +201,7 @@ const UnhydratedMap = ({ locations }: { locations: Sanity.MapLocationsQueryResul
         options={{
           // see NOTE 2
           clickableIcons: false,
-        /\}\}/ 
+        }} 
         /* insert: cluster map capabilities */
       >
         {locations.map(({latitude, longitude}, i) => (
@@ -220,6 +223,7 @@ const UnhydratedMap = ({ locations }: { locations: Sanity.MapLocationsQueryResul
         {`.gm-style div > img {position: absolute;}`}
       </style>
     </main>
+{% endraw %}
   )
 }
 
@@ -257,6 +261,7 @@ interface PinProps {
 
 export const Pin = ({ lat, lng, onClickAction }: PinProps) => (
   <div
+{% raw %}
     style={{
       position: 'relative',
       display: 'flex',
@@ -265,7 +270,8 @@ export const Pin = ({ lat, lng, onClickAction }: PinProps) => (
       width: '30px',
       height: '30px',
       transform: 'translateX(-50%) translateY(-50%)',
-    /\}\}/ 
+    }} 
+{% endraw %}
     lat={lat}
     lng={lng}
     onClick={onClickAction}
@@ -298,11 +304,13 @@ export const Popup = ({ lat, lng, location }: PopupProps) => (
   <div
     lat={lat}
     lng={lng}
+{% raw %}
     style={{
       display: (!!lat && !!lng) ? 'block' : 'none',
       background: 'black',
       foreground: 'white'
-    /\}\}/ 
+    }} 
+{% endraw %}
   >
     <div><strong>{location?.name}</strong></div>
     <div><em>{location?.streetAddress}</em></div>
@@ -348,6 +356,7 @@ When multiple pins are close to each other on a map, they become indiscernible a
 
 We’ll need a `<Cluster />` component. It’s very similar to the `<Pin />` component. Create `Cluster.tsx`:
 
+{% raw %}
 ```typescript
 'use client'
 
@@ -366,6 +375,7 @@ export const Cluster = ({ lat, lng, pointCount, totalPoints, onClickAction }: Cl
       lat={lat}
       lng={lng}
       onClick={onClickAction}
+{% raw %}
       style={{
         width: length.toString() + 'px',
         height: length.toString() + 'px',
@@ -378,13 +388,15 @@ export const Cluster = ({ lat, lng, pointCount, totalPoints, onClickAction }: Cl
         background: 'blue',
         color: 'white',
         fontSize: '12px',
-      /\}\}/ 
+      }} 
+{% endraw %}
     >
       x{pointCount}
     </div>
   )
 }
 ```
+{% endraw %}
 
 #### Add clusters to `<Map />` component
 
