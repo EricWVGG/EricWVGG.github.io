@@ -1,14 +1,14 @@
-# Building a Store Finder with NextJS, Google Maps and Sanity
+# Building an interactive map with NextJS, Google Maps and Sanity
 
-I’ve been asked to install “store locator” widgets a few times over the years. I was surprised to learn that it’s even a product that people pay for! In this house we build our own shit.
+I’ve been asked to install “store locator” widgets a few times over the years. I was surprised to learn that it’s even a product that people pay for! _In this house we build our own shit._
 
-This tutorial assumes you have basic experience in NextJS, Sanity, and Typescript; and that Sanity is set up for automatic type generation. (If you aren't using that last one, you can replace the `Sanity.whatever` types with `unknown` or manually written types… but [boy you are missing out](https://www.sanity.io/docs/apis-and-sdks/sanity-typegen). And if you’re not using NextJS, these instructions should be pretty easy to adapt.
+This tutorial assumes you have basic experience in NextJS, Sanity, and Typescript; and that Sanity is set up for automatic type generation. (If you aren't using that last one, you can replace the `Sanity.whatever` types with `unknown` or manually written types… but [boy you are missing out](https://www.sanity.io/docs/apis-and-sdks/sanity-typegen)). And if you’re not using NextJS, these instructions should be very easy to adapt.
 
 You don’t need to know much about Google Maps, but [you will need an API key](https://developers.google.com/maps/documentation/javascript/get-api-key).
 
 // this is a first-draft, haven’t tested this code yet
 
-## Dependencies and .env
+## Setup
 
 We all live in dependency hell!
 
@@ -120,7 +120,7 @@ export const mapLocationsQuery = defineQuery(`
 
 ## NextJS Page
 
-I’m assuming you’re using the App Router here, and use some kind of alias imports. If you’re not using alias imports, replace `@/` below with hard-coded paths to your Sanity client, the query, and the `Map.tsx` file you'll be making in just a moment.
+I’m assuming you’re using the App Router here, and use some kind of alias imports. If you’re a monster who doesn’t use alias imports, replace `@/` below with hard-coded paths to your Sanity client, the query, and the `Map.tsx` file you'll be making in just a moment.
 
 Create `/app/locations/page.tsx`:
 
@@ -137,9 +137,7 @@ export default async function MapLocationsPage() {
 }
 ```
 
-## React components
-
-We're going to do this in three steps…
+We're going to do the rest of this in three steps…
 
 1. Make a map that shows pins.
 2. Make a popup for pin details.
@@ -149,9 +147,9 @@ If all you want is a map with pins, steps 2 and 3 are totally optional!
 
 I’ve added "insertion points" for the latter steps; just ignore them for now.
 
-### Basic map with pins
+## Basic map with pins
 
-#### Pin component
+### Pin component
 
 We’ll need a component for our Pin. Create the following file `Pin.tsx`:
 
@@ -161,7 +159,7 @@ We’ll need a component for our Pin. Create the following file `Pin.tsx`:
 interface PinProps {
   lat: number
   lng: number;
-  onClickAction?: any // yes I'm sometimes lazy about onClick types… they’re hard!
+  onClickAction?: () => void
 }
 {% raw %}
 export const Pin = ({ lat, lng, onClickAction }: PinProps) => (
@@ -173,6 +171,7 @@ export const Pin = ({ lat, lng, onClickAction }: PinProps) => (
       alignItems: 'center',
       width: '30px',
       height: '30px',
+      borderRadius: '100%',
       transform: 'translateX(-50%) translateY(-50%)',
       background: 'magenta',
       color: 'white'
@@ -185,9 +184,9 @@ export const Pin = ({ lat, lng, onClickAction }: PinProps) => (
 {% endraw %}
 ```
 
-I like to use garish colors for placeholder styles; feel free to add your own custom styles, or delete them all and use Tailwind if you’re some kind of animal.
+I like to use garish colors for placeholder styles; feel free to add your own custom styles, or use Tailwind if you’re some kind of animal.
 
-#### Map component
+### Map component
 
 Create a new component called `Map.tsx`:
 
@@ -200,12 +199,12 @@ import { Pin } from './Pin'
 // insert: popup imports
 // insert: cluster imports
 
-export const MAP_DEFAULT_LAT = 41.8277584
-export const MAP_DEFAULT_LNG = -87.6620778
-export const MAP_DEFAULT_ZOOM = 10
-export const MAP_CLUSTER_RADIUS = 120
-export const MAP_MAX_ZOOM = 20
-export const GOOGLE_MAPS_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY
+const MAP_DEFAULT_LAT = 41.8277584
+const MAP_DEFAULT_LNG = -87.6620778
+const MAP_DEFAULT_ZOOM = 10
+const MAP_CLUSTER_RADIUS = 120
+const MAP_MAX_ZOOM = 20
+const GOOGLE_MAPS_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY
 
 const UnhydratedMap = ({ locations }: { locations: Sanity.MapLocationsQueryResult }) => {
   const { width } = useWindowSize()
@@ -216,7 +215,7 @@ const UnhydratedMap = ({ locations }: { locations: Sanity.MapLocationsQueryResul
 
   // insert: cluster points
 
-  // insert: clusterizer
+  // insert: cluster hook
 
   // insert: cluster click action
 {% raw %}
@@ -264,31 +263,33 @@ const UnhydratedMap = ({ locations }: { locations: Sanity.MapLocationsQueryResul
 export const Map = dynamic(() => Promise.resolve(UnhydratedMap), { ssr: false })
 ```
 
-#### Important fixes for unexpected behaviors
+### Important fixes for unexpected behaviors
 
-<strong>NOTE 1</strong>: Google maps requires that the width and height of the map are _explicitly set in the style attribute_. It doesn't have to be in pixels — I'm using dvw and dvh units — but it does have to be in a `style=` attribute. <em>Putting it in a `className` will not work!</em>
+<strong>NOTE 1</strong>: Google maps requires that the width and height of the map are _explicitly set in the style attribute_. It doesn't have to be in pixels — I'm using dvw and dvh units — but it **has to be in a `style=` attribute**. <em>Putting it in `className=` will not work!</em>
 
 <strong>NOTE 2</strong>: By default, Google makes certain locations like public parks clickable. That can lead to unexpected results if you have a map pin near one of these locations. `clickableIcons: false` fixes that.
 
 <strong>NOTE 3</strong>: [Embedded maps may have a missing row of map tiles on the bottom row.](https://stackoverflow.com/questions/41544151/google-maps-missing-row-of-tiles-on-chrome) It's been an issue for years. That style declaration fixes it.
 
-#### What’s this about next/dynamic?
+### What’s this about next/dynamic?
 
 Google Maps introduces a lot of dependencies into your project. By using `next/dynamic`, this stuff is kept outside your usual site javascript payload, and only loaded on demand.
 
 Technically it’s not necessary; you may need to remove that if you’re using a completely static NextJS build.
 
-That’s it, you should have a working map with pins now. If that’s all you wanted, 
+### That’s it
 
-### Popups
+You should have a working map with pins now. If that’s all you wanted, clean up the `// insert` comments, pat yourself on the back, and go hit happy hour.
 
-Let's make a popup that shows a name and address when the user clicks on a pin.
+## Popups
 
-#### Popup Component
+Still here? Okay, let's make a popup that shows a name and address when the user clicks on a pin.
 
-When I built this, my first impulse was to put a popup inside each pin with it's own show/hide state. That approach doesn’t scale well; it’s not uncommon to have hundreds of pins (more on that when we get to clusters).
+### Popup Component
 
-So instead, we're going to make one `<Popup />` component, with a dynamic position. Create `Popup.tsx`:
+When I first built one of these, my impulse was to put a popup inside each pin with it's own show/hide state. That approach doesn’t scale well; it’s not uncommon to have hundreds of pins (more on that when we get to clusters).
+
+Instead, we're going to make one `<Popup />` component, with a dynamic position. Create `Popup.tsx`:
 
 ```typescript
 'use client'
@@ -305,8 +306,9 @@ export const Popup = ({ lat, lng, location }: PopupProps) => (
     lng={lng}
     style={{
       display: (!!lat && !!lng) ? 'block' : 'none',
-      background: 'black',
-      foreground: 'white'
+      padding: '4px',
+      background: 'green',
+      foreground: 'white',
     }} 
   >
     <div><strong>{location?.name}</strong></div>
@@ -316,27 +318,27 @@ export const Popup = ({ lat, lng, location }: PopupProps) => (
 {% endraw %}
 ```
 
-#### Add the Popup and functionality to the Map component.
+### Add the Popup and functionality to the Map component.
 
-replace `// insert: popup imports` with:
+Replace `// insert: popup imports` with:
 
 ```typescript
 import { Popup } from "./Popup"
 ```
 
-replace `// insert: popup states` with:
+Replace `// insert: popup states` with:
 
 ```typescript
 const [activeLocation, setActiveLocation] = useState<Member<Sanity.MapLocationsQueryResult> | null>(null)
 ```
 
-replace `{/* insert: popup component */}` with:
+Replace `{/* insert: popup component */}` with:
 
 ```typescript
 <Popup location={activeLocation || undefined} lat={activeLocation?.geoLocation?.latitude} lng={activeLocation?.geoLocation?.longitude} />
 ```
 
-replace `/* insert: popup pin clicks */` with:
+Replace `/* insert: popup pin clicks */` with:
 
 ```typescript
 onClickAction={() => setActiveLocation(mapItem.location)}
@@ -346,13 +348,15 @@ Recap: we're now tracking an “active location”. Upon clicking a map pin, tha
 
 The popup dynamically keeps `activeLocation`, and hides itself if no lat/lng is selected.
 
-### Clusters
+## Clusters
 
-When multiple pins are close to each other on a map, they become indiscernible and unclickable. If you're dealing with even more than a handful of pins, this becomes necessary fast.
+When multiple pins are close to each other on a map, they become indiscernible and unclickable. If you're dealing with even a handful of pins, this can become necessary fast.
 
-#### Cluster component
+[**SuperCluster**](https://github.com/mapbox/supercluster) is this insane package that can take a pile of points, and output a mixed array of clusters of closely-located points _and_ isolated points. It’s compatible with other map solutions like [Mapbox](https://github.com/mapbox) and is generally just amazing. 
 
-We’ll need a `<Cluster />` component. It’s very similar to the `<Pin />` component. Create `Cluster.tsx`:
+### Cluster component
+
+We’ll need a `<Cluster />` component to represent clusters on the map. It’s very similar to the `<Pin />` component. Create `Cluster.tsx`:
 
 ```typescript
 'use client'
@@ -362,11 +366,18 @@ interface ClusterProps {
   lng: number;
   pointCount: number;
   totalPoints: number;
-  onClickAction: any
+  onClickAction: () => void
 }
 
+const MAX_CLUSTER_SIZE = 100
+const MIN_CLUSTER_SIZE = 40
+const CLUSTER_SIZE_INCREMENT = 10
+
 export const Cluster = ({ lat, lng, pointCount, totalPoints, onClickAction }: ClusterProps) => {
-  const length = 40 + (pointCount / totalPoints) * 10
+  const diameter = min(
+    MAX_CLUSTER_SIZE,
+    MIN_CLUSTER_SIZE + (pointCount / totalPoints) * CLUSTER_SIZE_INCREMENT
+  )
 {% raw %}
   return (
     <div
@@ -374,27 +385,29 @@ export const Cluster = ({ lat, lng, pointCount, totalPoints, onClickAction }: Cl
       lng={lng}
       onClick={onClickAction}
       style={{
-        width: length.toString() + 'px',
-        height: length.toString() + 'px',
+        width: diameter.toString() + 'px',
+        height: diameter.toString() + 'px',
         position: 'relative',
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
         transform: 'translateX(-50%) translateY(-50%)',
-        borderRadius: '9999px',
-        background: 'blue',
+        borderRadius: '100%',
+        background: 'orange',
         color: 'white',
         fontSize: '12px',
       }} 
     >
       x{pointCount}
     </div>
-{% endraw %}
   )
 }
+{% endraw %}
 ```
 
-#### Add clusters to `<Map />` component
+The `diameter` variable lets you size up the cluster to represent larger counts. Feel free to just use a static size if that’s not desired.
+
+### Add clusters to `<Map />` component
 
 There’s a lot of steps here, so I’ve done my best to make them very granular. First, add these dependencies to the project:
 
@@ -455,7 +468,7 @@ interface MarkerProperties {
 }
 ```
 
-Now we’ll set up a “clusterizer” (yes, it’s really called that) that turns our map points into a mix of clusters and pins. Replace `// insert: clusterizer` with:
+Now we’ll set up a hook that turns our map points into a mix of clusters and pins. Replace `// insert: cluster hook` with:
 
 ```typescript
 const { clusters, supercluster } = useSupercluster({
@@ -509,38 +522,36 @@ Finally, we need to replace the location pins with a mix of clusters and pins. D
 … and replace `{/* insert: cluster components */}` with:
 
 ```typescript
-{
-  clusters.map((mapItem, i) => {
-    const [longitude, latitude] = mapItem.geometry.coordinates
-    const { cluster: isCluster, point_count: pointCount } = mapItem.properties
-    return isCluster && pointCount ? (
-      <Cluster
-        key={`cluster-${mapItem.id}`}
-        lat={latitude}
-        lng={longitude}
-        pointCount={pointCount}
-        totalPoints={points.length}
-        onClickAction={() => zoomOnCluster(mapItem.id!, latitude, longitude)}
-      />
-    ) : (
-      <Pin
-        key={`marker-${i}`}
-        lat={latitude}
-        lng={longitude}
-        onClickAction={() => setActiveLocation(mapItem.location)}
-      />
-    )
-  })
-}
+{clusters.map((mapItem, i) => {
+  const [longitude, latitude] = mapItem.geometry.coordinates
+  const { cluster: isCluster, point_count: pointCount, locationData } = mapItem.properties
+  return isCluster && pointCount ? (
+    <Cluster
+      key={`cluster-${mapItem.id}`}
+      lat={latitude}
+      lng={longitude}
+      pointCount={pointCount}
+      totalPoints={points.length}
+      onClickAction={() => zoomOnCluster(mapItem.id!, latitude, longitude)}
+    />
+  ) : (
+    <Pin
+      key={`marker-${i}`}
+      lat={latitude}
+      lng={longitude}
+      onClickAction={() => setActiveLocation(locationData)}
+    />
+  )
+})}
 ```
 
-I hope that's pretty straightforward: `useSuperCluster` generates a new mix of Cluster and Pin items, and outputs the correct components accordingly.
+I hope that's pretty straightforward: `useSuperCluster` generates the new mix of Cluster and Pin items; we map over them and output the correct components.
 
-Hey cool we’re done. Give it a try.
+Hey cool we’re done :P
 
 ## Follow-up tutorial
 
-I’m going to follow up this tutorial with two more; both regard different approaches to getting the latitude and longitude coordinates for locations from Google Maps.
+I’m going to follow this up with two more tutorials, both regarding different approaches to getting the latitude and longitude coordinates for locations from Google Maps.
 
 - Coming soon: building a custom Sanity GetCoordinates input component!
 - Coming soon: syncing a Google Spreadsheet into Sanity, with automatic Google Maps geolocation lookups. 

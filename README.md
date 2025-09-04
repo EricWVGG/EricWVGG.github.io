@@ -1,5 +1,5 @@
 # EricWVGG.github.io
 
-Testing this out…
+Oh just some random tutorials and nonsense…
 
-- [Store Finder with Sanity, NextJS and Google Maps](sanity-nextjs-store-finder)
+- [Interactive Map with Sanity, NextJS and Google Maps](sanity-nextjs-google-map)
