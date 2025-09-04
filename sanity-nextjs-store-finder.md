@@ -10,7 +10,7 @@ You don’t need to know much about Google Maps, but [you will need an API key](
 
 ## Dependencies and .env
 
-We all live in dependency hell, let's go…
+We all live in dependency hell!
 
 ```
 npm install google-map-react usehooks-ts
@@ -78,7 +78,7 @@ export const mapLocationSchema = defineType({
       fieldset: "coordinates",
     }),
   ],
-  // a “coordinates” grouping to keep things tidy
+  // a “coordinates” group to keep things tidy
   fieldsets: [
     {
       title: "Coordinates",
@@ -120,7 +120,7 @@ export const mapLocationsQuery = defineQuery(`
 
 ## NextJS Page
 
-I’m assuming you’re using the App Router here, and use some kind of alias imports. If you’re not using alias imports, replace `@/` below with hard-coded paths to your Sanity client, the query you wrote, and the `Map.tsx` file you'll be making next.
+I’m assuming you’re using the App Router here, and use some kind of alias imports. If you’re not using alias imports, replace `@/` below with hard-coded paths to your Sanity client, the query, and the `Map.tsx` file you'll be making in just a moment.
 
 Create `/app/locations/page.tsx`:
 
