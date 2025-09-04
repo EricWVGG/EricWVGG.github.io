@@ -187,18 +187,18 @@ const UnhydratedMap = ({ locations }: { locations: Sanity.MapLocationsQueryResul
   return (
     <main
       // see NOTE 1
-      style=&#123;&#123;
+      style={&123;
         height: width < 744 ? "80dvh" : "63dvw",
         width: "100%"
-      &#125;&#125;
+      &125;}
     >
       <GoogleMapReact
         bootstrapURLKeys={{ key: googleMapsKey }}
         defaultZoom={defaultZoom}
-        options=&#123;&#123;
+        options={&123;
           // see NOTE 2
           clickableIcons: false,
-        &#125;&#125;
+        &125;}
         /* insert: cluster map capabilities */
       >
         {locations.map(({latitude, longitude}, i) => (
@@ -243,7 +243,7 @@ interface PinProps {
 
 export const Pin = ({ lat, lng, onClickAction }: PinProps) => (
   <div
-    style=&#123;&#123;
+    style={&123;
       position: 'relative',
       display: 'flex',
       justifyContent: 'center',
@@ -251,7 +251,7 @@ export const Pin = ({ lat, lng, onClickAction }: PinProps) => (
       width: '30px',
       height: '30px',
       transform: 'translateX(-50%) translateY(-50%)',
-    &#125;&#125;
+    &125;}
     lat={lat}
     lng={lng}
     onClick={onClickAction}
@@ -296,11 +296,11 @@ export const Popup = ({ lat, lng, location }: PopupProps) => (
   <div
     lat={lat}
     lng={lng}
-    style=&#123;&#123;
+    style={&123;
       display: (!!lat && !!lng) ? 'block' : 'none',
       background: 'black',
       foreground: 'white'
-    &#125;&#125;
+    &125;}
   >
     <div><strong>{location?.name}</strong></div>
     <div><em>{location?.streetAddress}</em></div>
@@ -364,7 +364,7 @@ export const Cluster = ({ lat, lng, pointCount, totalPoints, onClickAction }: Cl
       lat={lat}
       lng={lng}
       onClick={onClickAction}
-      style=&#123;&#123;
+      style={&123;
         width: length.toString() + 'px',
         height: length.toString() + 'px',
         position: 'relative',
@@ -376,7 +376,7 @@ export const Cluster = ({ lat, lng, pointCount, totalPoints, onClickAction }: Cl
         background: 'blue',
         color: 'white',
         fontSize: '12px',
-      &#125;&#125;
+      &125;}
     >
       x{pointCount}
     </div>
