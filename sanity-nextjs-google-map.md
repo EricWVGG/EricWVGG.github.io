@@ -31,7 +31,6 @@ import { defineField, defineType } from "sanity"
 
 export const mapLocationSchema = defineType({
   name: "mapLocation",
-  title: "Stockist",
   type: "document",
   orderings: [
     {
@@ -155,32 +154,32 @@ We’ll need a component for our Pin. Create the following file `Pin.tsx`:
 
 {% raw %}
 ```typescript
-'use client'
+"use client"
 
 interface PinProps {
   lat: number
-  lng: number;
+  lng: number
   onClickAction?: () => void
 }
-export const Pin = ({ lat, lng, onClickAction }: PinProps) => (
+export const Pin = ({ onClickAction, ...rest }: PinProps) => (
   <div
     style={{
-      position: 'relative',
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-      width: '30px',
-      height: '30px',
-      borderRadius: '100%',
-      transform: 'translateX(-50%) translateY(-50%)',
-      background: 'magenta',
-      color: 'white'
-    }} 
-    lat={lat}
-    lng={lng}
+      position: "relative",
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+      width: "30px",
+      height: "30px",
+      borderRadius: "100%",
+      transform: "translateX(-50%) translateY(-50%)",
+      background: "magenta",
+      color: "white",
+    }}
     onClick={onClickAction}
+    {...rest}
   >x</div>
 )
+
 ```
 {% endraw %}
 
@@ -194,6 +193,7 @@ Create a new component called `Map.tsx`:
 ```typescript
 'use client'
 
+import { GoogleMapReact } from 'google-map-react'
 import { useState, useMemo, useRef } from 'react'
 import { useWindowSize } from 'usehooks-ts'
 import { Pin } from './Pin'
@@ -235,15 +235,21 @@ const UnhydratedMap = ({ locations }: { locations: Sanity.MapLocationsQueryResul
           // see NOTE 2
           clickableIcons: false,
         }} 
-        {/* insert: cluster map capabilities */}
+        defaultCenter={{
+          lat: MAP_DEFAULT_LAT,
+          lng: MAP_DEFAULT_LNG
+        }}
+        // insert: cluster map capabilities
       >
-        {locations.map(({_id, latitude, longitude}) => (
-          <Pin
-            key={_id}
-            lat={latitude}
-            lng={longitude}
-            {/* insert: popup pin clicks */}
-          />
+        {locations
+          .filter(location => !!location.latitude && !!location.longitude)
+          .map((location) => (
+            <Pin
+              key={location._id}
+              lat={location.latitude}
+              lng={location.longitude}
+              // insert: popup pin clicks
+            />
         ))}
 
         {/* insert: cluster components */}
@@ -266,15 +272,15 @@ export const Map = dynamic(() => Promise.resolve(UnhydratedMap), { ssr: false })
 
 ### Important fixes for unexpected behaviors
 
-<strong>NOTE 1</strong>: Google maps requires that the width and height of the map are _explicitly set in the style attribute_. It doesn't have to be in pixels — I'm using dvw and dvh units — but it **has to be in a `style=` attribute**. <em>Putting it in `className=` will not work!</em>
+<strong>NOTE 1</strong>: Google maps requires that the width and height of the map are _explicitly set in the style attribute_. It doesn't have to be in pixels — I'm using dvw and dvh units — but it has to be in a **`style=` attribute**. <em>Putting it in `className=` will not work!</em>
 
-<strong>NOTE 2</strong>: By default, Google makes certain locations like public parks clickable. That can lead to unexpected results if you have a map pin near one of these locations. `clickableIcons: false` fixes that.
+<strong>NOTE 2</strong>: Google makes certain locations like public parks clickable by default. That can lead to unexpected results if you have a map pin near one of these locations. `clickableIcons: false` fixes that.
 
-<strong>NOTE 3</strong>: [Embedded maps may have a missing row of map tiles on the bottom row.](https://stackoverflow.com/questions/41544151/google-maps-missing-row-of-tiles-on-chrome) It's been an issue for years. That style declaration fixes it.
+<strong>NOTE 3</strong>: [Embedded maps may have a missing row of map tiles on the bottom row.](https://stackoverflow.com/questions/41544151/google-maps-missing-row-of-tiles-on-chrome) It's been a known bug for years. That style declaration fixes it.
 
-### What’s this about next/dynamic?
+### What’s next/dynamic?
 
-Google Maps introduces a lot of dependencies into your project. By using `next/dynamic`, this stuff is kept outside your usual site javascript payload, and only loaded on demand.
+Google Maps introduces a lot of dependencies into your project. By using `next/dynamic`, this stuff is kept outside your normal site javascript payload, and is only loaded on demand.
 
 Technically it’s not necessary; you may need to remove that if you’re using a completely static NextJS build.
 
@@ -294,26 +300,29 @@ Instead, we're going to make one `<Popup />` component, with a dynamic position.
 
 {% raw %}
 ```typescript
-'use client'
+"use client"
 
 interface PopupProps {
-  lat?: number;
-  lng?: number;
+  lat?: number
+  lng?: number
   location?: Member<Sanity.MapLocationsQueryResult>
 }
-export const Popup = ({ lat, lng, location }: PopupProps) => (
+export const Popup = ({ location, ...rest }: PopupProps) => (
   <div
-    lat={lat}
-    lng={lng}
     style={{
-      display: (!!lat && !!lng) ? 'block' : 'none',
-      padding: '4px',
-      background: 'green',
-      foreground: 'white',
-    }} 
+      display: !!rest.lat && !!rest.lng ? "block" : "none",
+      padding: "4px",
+      background: "green",
+      color: "white",
+    }}
+    {...rest}
   >
-    <div><strong>{location?.name}</strong></div>
-    <div><em>{location?.streetAddress}</em></div>
+    <div>
+      <strong>{location?.name}</strong>
+    </div>
+    <div>
+      <em>{location?.streetAddress}</em>
+    </div>
   </div>
 )
 ```
@@ -339,10 +348,10 @@ Replace `{/* insert: popup component */}` with:
 <Popup location={activeLocation || undefined} lat={activeLocation?.geoLocation?.latitude} lng={activeLocation?.geoLocation?.longitude} />
 ```
 
-Replace `{/* insert: popup pin clicks */}` with:
+Replace `// insert: popup pin clicks` with:
 
 ```typescript
-onClickAction={() => setActiveLocation(mapItem.location)}
+onClickAction={() => setActiveLocation(location)}
 ```
 
 Recap: we're now tracking an “active location”. Upon clicking a map pin, that location is set. The popup `activeLocation` to derive its copy, and hides itself if no lat/lng is selected.
@@ -359,39 +368,38 @@ We’ll need a `<Cluster />` component to represent clusters on the map. It’s 
 
 {% raw %}
 ```typescript
-'use client'
+"use client"
 
 interface ClusterProps {
-  lat: number;
-  lng: number;
-  pointCount: number;
-  totalPoints: number;
+  lat: number
+  lng: number
+  pointCount: number
+  totalPoints: number
   onClickAction: () => void
 }
 
 const MIN_CLUSTER_SIZE = 40
 const MAX_CLUSTER_SIZE = 100
 
-export const Cluster = ({ lat, lng, pointCount, totalPoints, onClickAction }: ClusterProps) => {
+export const Cluster = ({ pointCount, totalPoints, onClickAction, ...rest }: ClusterProps) => {
   const diameter = MIN_CLUSTER_SIZE + (pointCount / totalPoints) * (MAX_CLUSTER_SIZE - MIN_CLUSTER_SIZE)
   return (
     <div
-      lat={lat}
-      lng={lng}
       onClick={onClickAction}
       style={{
-        width: diameter.toString() + 'px',
-        height: diameter.toString() + 'px',
-        position: 'relative',
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        transform: 'translateX(-50%) translateY(-50%)',
-        borderRadius: '100%',
-        background: 'orange',
-        color: 'white',
-        fontSize: '12px',
-      }} 
+        width: diameter.toString() + "px",
+        height: diameter.toString() + "px",
+        position: "relative",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        transform: "translateX(-50%) translateY(-50%)",
+        borderRadius: "100%",
+        background: "orange",
+        color: "white",
+        fontSize: "12px",
+      }}
+      {...rest}
     >
       x{pointCount}
     </div>
@@ -422,7 +430,7 @@ Replace `// insert: cluster states` with:
 
 ```typescript
 const [bounds, setBounds] = useState<[number, number, number, number]>([0, 0, 0, 0])
-const [zoom, setZoom] = useState(defaultZoom)
+const [zoom, setZoom] = useState(MAP_DEFAULT_ZOOM)
 const mapRef = useRef<any>(null)
 ```
 
@@ -432,20 +440,22 @@ Replace `// insert: cluster points` with:
 
 ```typescript
 const points = useMemo(() =>
-  locations.map(
-    (location) =>
-      ({
-        type: "Feature",
-        properties: { cluster: false, locationData: location },
-        geometry: {
-          type: "Point",
-          coordinates: [
-            location.geoLocation!.longitude,
-            location.geoLocation!.latitude
-          ],
-        },
-      } as PointFeature<MarkerProperties>)
-  ),
+  locations
+    .filter(location => !!location.latitude && !!location.longitude)
+    .map(
+      (location) =>
+        ({
+          type: "Feature",
+          properties: { cluster: false, locationData: location },
+          geometry: {
+            type: "Point",
+            coordinates: [
+              location.geoLocation!.longitude,
+              location.geoLocation!.latitude
+            ],
+          },
+        } as PointFeature<MarkerProperties>)
+    ),
   [locations]
 )
 ```
@@ -479,10 +489,10 @@ const { clusters, supercluster } = useSupercluster({
 We’ll need a click action for the cluster markers. Replace `// insert: cluster click action` with:
 
 ```typescript
-const zoomOnClusterAction = (clusterId: number | string, lat: number, lng: number) => {
+const zoomOnCluster = (clusterId: number | string, lat: number, lng: number) => {
   if (typeof supercluster === "undefined") return
   const newZoom = Math.min(
-    MAX_MAP_ZOOM,
+    MAP_MAX_ZOOM,
     supercluster.getClusterExpansionZoom(typeof clusterId === "number" 
       ? clusterId 
       : Number(clusterId))
@@ -492,7 +502,7 @@ const zoomOnClusterAction = (clusterId: number | string, lat: number, lng: numbe
 }
 ```
 
-We need to give the Map the ability to update the zoom and bounds from our code. Replace `{/* insert: cluster map capabilities */}` with these attributes:
+We need to give the Map the ability to update the zoom and bounds from our code. Replace `// insert: cluster map capabilities` with these attributes:
 
 ```typescript
 yesIWantToUseGoogleMapApiInternals
@@ -516,7 +526,7 @@ Finally, we need to replace the location pins with a mix of clusters and pins. D
 … and replace `{/* insert: cluster components */}` with:
 
 ```typescript
-{clusters.map((mapItem, i) => {
+{clusters.map((mapItem) => {
   const [longitude, latitude] = mapItem.geometry.coordinates
   const { cluster: isCluster, point_count: pointCount, locationData } = mapItem.properties
   return isCluster && pointCount ? (
