@@ -91,7 +91,9 @@ export const mapLocationSchema = defineType({
 })
 ```
 
-Yes, -90 to 90 and -180 to 180 are the valid ranges for latitude and longitude figures! If you don’t have lat/lng coordinates, I’m going to follow up this tutorial with another on populating Sanity with a spreadsheet of locations and automatically pulling coordinates; for now, just fake it with some made-up numbers.
+Yes, -90 to 90 and -180 to 180 are the valid ranges for latitude and longitude figures!
+
+If you don’t have lat/lng coordinates, I’m going to follow up this tutorial with [two approaches for getting this data](#follow-up-tutorial); for now, just fake it with some made-up numbers.
 
 Add this to your existing Sanity schema:
 
@@ -143,7 +145,9 @@ We're going to do this in three steps…
 2. Make a popup for pin details.
 3. Add "clusters" for closely set pins.
 
-If all you want is a map with pins, steps 2 and 3 are totally optional! I’ve added "insertion points" for the latter steps; just ignore them for now.
+If all you want is a map with pins, steps 2 and 3 are totally optional!
+
+I’ve added "insertion points" for the latter steps; just ignore them for now.
 
 ### Basic map with pins
 
@@ -156,7 +160,6 @@ Create a new component called `Map.tsx`:
 
 import { useState, useMemo, useRef } from 'react'
 import { useWindowSize } from 'usehooks-ts'
-import { MAP_DEFAULT_LAT, MAP_DEFAULT_LNG, MAP_DEFAULT_ZOOM, GOOGLE_MAPS_KEY, MAP_CLUSTER_RADIUS, MAP_MAX_ZOOM } from '@/const' // see above
 import { Pin } from './Pin'
 // insert: popup imports
 // insert: cluster imports
@@ -175,9 +178,9 @@ const UnhydratedMap = ({ locations }: { locations: Sanity.MapLocationsQueryResul
 
   // insert: cluster states
 
-  // insert: cluster points memo
+  // insert: cluster points
 
-  // insert: cluster hook
+  // insert: clusterizer
 
   // insert: cluster click action
 
@@ -207,7 +210,7 @@ const UnhydratedMap = ({ locations }: { locations: Sanity.MapLocationsQueryResul
           />
         ))}
 
-        {/* insert: cluster points */}
+        {/* insert: cluster components */}
 
         {/* insert: popup component */}
       </GoogleMapReact>
@@ -405,9 +408,9 @@ const [zoom, setZoom] = useState(defaultZoom)
 const mapRef = useRef<any>(null)
 ```
 
-Instead of simply mapping over the locations, we instead need to map over structured points that can be read by SuperCluster. Since the calculation isn’t quite cheap, we’ll use `useMemo()` to emsmarten it.
+Instead of simply mapping over the locations, we need to map over structured points that can be read by SuperCluster. To avoid rebuilding this array on every component render, we’ll use `useMemo()` to emsmarten things.
 
-Replace `// insert: cluster points memo` with:
+Replace `// insert: cluster points` with:
 
 ```typescript
 const points = useMemo(
@@ -419,7 +422,10 @@ const points = useMemo(
           properties: { cluster: false, locationData: location },
           geometry: {
             type: "Point",
-            coordinates: [location.geoLocation!.longitude, location.geoLocation!.latitude],
+            coordinates: [
+              location.geoLocation!.longitude,
+              location.geoLocation!.latitude
+            ],
           },
         } as PointFeature<MarkerProperties>)
     ),
@@ -439,14 +445,17 @@ interface MarkerProperties {
 }
 ```
 
-Now we’ll set up our “clusterizer” (yes, it’s really called that). Replace `// insert: cluster hook` with:
+Now we’ll set up a “clusterizer” (yes, it’s really called that) that turns our map points into a mix of clusters and pins. Replace `// insert: clusterizer` with:
 
 ```typescript
 const { clusters, supercluster } = useSupercluster({
   points,
   bounds,
   zoom,
-  options: { radius: CLUSTER_RADIUS, maxZoom: MAX_ZOOM },
+  options: {
+    radius: CLUSTER_RADIUS,
+    maxZoom: MAX_ZOOM
+  },
 })
 ```
 
@@ -455,7 +464,12 @@ We’ll need a click action for the cluster markers. Replace `// insert: cluster
 ```typescript
 const zoomOnClusterAction = (clusterId: number | string, lat: number, lng: number) => {
   if (typeof supercluster === "undefined") return
-  const newZoom = Math.min(supercluster.getClusterExpansionZoom(typeof clusterId === "number" ? clusterId : Number(clusterId)), MAX_MAP_ZOOM)
+  const newZoom = Math.min(
+    MAX_MAP_ZOOM,
+    supercluster.getClusterExpansionZoom(typeof clusterId === "number" 
+      ? clusterId 
+      : Number(clusterId))
+  )
   mapRef.current?.setZoom(newZoom)
   mapRef.current?.panTo({ lat, lng })
 }
@@ -474,7 +488,7 @@ onChange={({ zoom, bounds }) => {
 }}
 ```
 
-We need to replace the location pins with a mix of clusters and pins. Replace this:
+Finally, we need to replace the location pins with a mix of clusters and pins. Delete this…
 
 ```typescript
 {locations.map(({latitude, longitude}, i) => (
@@ -482,7 +496,7 @@ We need to replace the location pins with a mix of clusters and pins. Replace th
 ))}
 ```
 
-… with this:
+… and replace `{/* insert: cluster components */}` with:
 
 ```typescript
 {
@@ -490,14 +504,33 @@ We need to replace the location pins with a mix of clusters and pins. Replace th
     const [longitude, latitude] = mapItem.geometry.coordinates
     const { cluster: isCluster, point_count: pointCount } = mapItem.properties
     return isCluster && pointCount ? (
-      <Cluster key={`cluster-${mapItem.id}`} lat={latitude} lng={longitude} pointCount={pointCount} totalPoints={points.length} onClickAction={() => zoomOnCluster(mapItem.id!, latitude, longitude)} />
+      <Cluster
+        key={`cluster-${mapItem.id}`}
+        lat={latitude}
+        lng={longitude}
+        pointCount={pointCount}
+        totalPoints={points.length}
+        onClickAction={() => zoomOnCluster(mapItem.id!, latitude, longitude)}
+      />
     ) : (
-      <Pin key={`marker-${i}`} lat={latitude} lng={longitude} onClickAction={() => setActiveLocation(mapItem.location)} />
+      <Pin
+        key={`marker-${i}`}
+        lat={latitude}
+        lng={longitude}
+        onClickAction={() => setActiveLocation(mapItem.location)}
+      />
     )
   })
 }
 ```
 
-I hope that's pretty straightforward: `useSuperCluster` generates a new mix of Cluster and Pin items; output the correct components accordingly.
+I hope that's pretty straightforward: `useSuperCluster` generates a new mix of Cluster and Pin items, and outputs the correct components accordingly.
 
 Hey cool we’re done. Give it a try.
+
+## Follow-up tutorial
+
+I’m going to follow up this tutorial with two more; both regard different approaches to getting the latitude and longitude coordinates for locations from Google Maps.
+
+- Coming soon: building a custom Sanity GetCoordinates input component!
+- Coming soon: syncing a Google Spreadsheet into Sanity, with automatic Google Maps geolocation lookups. 
