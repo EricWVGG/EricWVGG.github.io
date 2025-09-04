@@ -493,25 +493,28 @@ interface ClusterProps {
   onClick: any
 }
 
-export const Cluster = ({ lat, lng, pointCount, totalPoints, ...props }: ClusterProps) => (
-  <div
-    {...props}
-    style={{
-      width: `${40 + (pointCount / totalPoints) * 10}px`,
-      height: `${40 + (pointCount / totalPoints) * 10}px`,
-      position: 'relative',
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-      transform: 'translateX(-50%) translateY(-50%)',
-      borderRadius: '9999px',
-      background: 'blue',
-      color: 'white',
-      fontSize: '12px',
-    }}
-  >
-    x{pointCount}
-  </div>
-)
+export const Cluster = ({ lat, lng, pointCount, totalPoints, ...props }: ClusterProps) => {
+  const length = 40 + (pointCount / totalPoints) * 10
+  return (
+    <div
+      {...props}
+      style={{
+        width: `${length}px`,
+        height: `${length}px`,
+        position: 'relative',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        transform: 'translateX(-50%) translateY(-50%)',
+        borderRadius: '9999px',
+        background: 'blue',
+        color: 'white',
+        fontSize: '12px',
+      }}
+    >
+      x{pointCount}
+    </div>
+  )
+}
 ```
 
