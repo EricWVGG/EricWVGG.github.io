@@ -139,13 +139,13 @@ export default async function MapLocationsPage() {
 
 We're going to do the rest of this in three steps…
 
-1. Make a map that shows pins.
-2. Make a popup for pin details.
-3. Add "clusters" for closely set pins.
+1. [Make a map that shows pins.](#basic-map-with-pins)
+2. [Make a popup for pin details.](#popups)
+3. [Add "clusters" for closely set pins.](#clusters)
 
 If all you want is a map with pins, steps 2 and 3 are totally optional!
 
-I’ve added "insertion points" for the latter steps; just ignore them for now.
+I’ve added "insertion points" to make the latter steps easier; just ignore them for now.
 
 ## Basic map with pins
 
@@ -153,6 +153,7 @@ I’ve added "insertion points" for the latter steps; just ignore them for now.
 
 We’ll need a component for our Pin. Create the following file `Pin.tsx`:
 
+{% raw %}
 ```typescript
 'use client'
 
@@ -161,7 +162,6 @@ interface PinProps {
   lng: number;
   onClickAction?: () => void
 }
-{% raw %}
 export const Pin = ({ lat, lng, onClickAction }: PinProps) => (
   <div
     style={{
@@ -181,8 +181,8 @@ export const Pin = ({ lat, lng, onClickAction }: PinProps) => (
     onClick={onClickAction}
   >x</div>
 )
-{% endraw %}
 ```
+{% endraw %}
 
 I like to use garish colors for placeholder styles; feel free to add your own custom styles, or use Tailwind if you’re some kind of animal.
 
@@ -190,6 +190,7 @@ I like to use garish colors for placeholder styles; feel free to add your own cu
 
 Create a new component called `Map.tsx`:
 
+{% raw %}
 ```typescript
 'use client'
 
@@ -218,7 +219,6 @@ const UnhydratedMap = ({ locations }: { locations: Sanity.MapLocationsQueryResul
   // insert: cluster hook
 
   // insert: cluster click action
-{% raw %}
   return (
     <main
       // see NOTE 1
@@ -236,9 +236,9 @@ const UnhydratedMap = ({ locations }: { locations: Sanity.MapLocationsQueryResul
         }} 
         /* insert: cluster map capabilities */
       >
-        {locations.map(({latitude, longitude}, i) => (
+        {locations.map(({_id, latitude, longitude}) => (
           <Pin
-            key={`marker-${i}`}
+            key={_id}
             lat={latitude}
             lng={longitude}
             /* insert: popup pin clicks */
@@ -257,11 +257,11 @@ const UnhydratedMap = ({ locations }: { locations: Sanity.MapLocationsQueryResul
     </main>
   )
 }
-{% endraw %}
 // insert: cluster marker type
 
 export const Map = dynamic(() => Promise.resolve(UnhydratedMap), { ssr: false })
 ```
+{% endraw %}
 
 ### Important fixes for unexpected behaviors
 
@@ -279,7 +279,7 @@ Technically it’s not necessary; you may need to remove that if you’re using 
 
 ### That’s it
 
-You should have a working map with pins now. If that’s all you wanted, clean up the `// insert` comments, pat yourself on the back, and go hit happy hour.
+You should have a working map with pins now. If that’s all you want, clean up the `// insert` comments, pat yourself on the back, and go hit happy hour.
 
 ## Popups
 
@@ -291,6 +291,7 @@ When I first built one of these, my impulse was to put a popup inside each pin w
 
 Instead, we're going to make one `<Popup />` component, with a dynamic position. Create `Popup.tsx`:
 
+{% raw %}
 ```typescript
 'use client'
 
@@ -299,7 +300,6 @@ interface PopupProps {
   lng?: number;
   location?: Member<Sanity.MapLocationsQueryResult>
 }
-{% raw %}
 export const Popup = ({ lat, lng, location }: PopupProps) => (
   <div
     lat={lat}
@@ -315,8 +315,8 @@ export const Popup = ({ lat, lng, location }: PopupProps) => (
     <div><em>{location?.streetAddress}</em></div>
   </div>
 )
-{% endraw %}
 ```
+{% endraw %}
 
 ### Add the Popup and functionality to the Map component.
 
@@ -358,6 +358,7 @@ When multiple pins are close to each other on a map, they become indiscernible a
 
 We’ll need a `<Cluster />` component to represent clusters on the map. It’s very similar to the `<Pin />` component. Create `Cluster.tsx`:
 
+{% raw %}
 ```typescript
 'use client'
 
@@ -378,7 +379,6 @@ export const Cluster = ({ lat, lng, pointCount, totalPoints, onClickAction }: Cl
     MAX_CLUSTER_SIZE,
     MIN_CLUSTER_SIZE + (pointCount / totalPoints) * CLUSTER_SIZE_INCREMENT
   )
-{% raw %}
   return (
     <div
       lat={lat}
@@ -402,8 +402,8 @@ export const Cluster = ({ lat, lng, pointCount, totalPoints, onClickAction }: Cl
     </div>
   )
 }
-{% endraw %}
 ```
+{% endraw %}
 
 The `diameter` variable lets you size up the cluster to represent larger counts. Feel free to just use a static size if that’s not desired.
 
@@ -436,22 +436,21 @@ Instead of simply mapping over the locations, we need to map over structured poi
 Replace `// insert: cluster points` with:
 
 ```typescript
-const points = useMemo(
-  () =>
-    locations.map(
-      (location) =>
-        ({
-          type: "Feature",
-          properties: { cluster: false, locationData: location },
-          geometry: {
-            type: "Point",
-            coordinates: [
-              location.geoLocation!.longitude,
-              location.geoLocation!.latitude
-            ],
-          },
-        } as PointFeature<MarkerProperties>)
-    ),
+const points = useMemo(() =>
+  locations.map(
+    (location) =>
+      ({
+        type: "Feature",
+        properties: { cluster: false, locationData: location },
+        geometry: {
+          type: "Point",
+          coordinates: [
+            location.geoLocation!.longitude,
+            location.geoLocation!.latitude
+          ],
+        },
+      } as PointFeature<MarkerProperties>)
+  ),
   [locations]
 )
 ```
@@ -498,7 +497,7 @@ const zoomOnClusterAction = (clusterId: number | string, lat: number, lng: numbe
 }
 ```
 
-We need to give the Map the ability to update the zoom and bounds from our code. Replace `/* insert: cluster map capabilities */` with:
+We need to give the Map the ability to update the zoom and bounds from our code. Replace `/* insert: cluster map capabilities */` with these attributes:
 
 ```typescript
 yesIWantToUseGoogleMapApiInternals
@@ -514,7 +513,7 @@ onChange={({ zoom, bounds }) => {
 Finally, we need to replace the location pins with a mix of clusters and pins. Delete this…
 
 ```typescript
-{locations.map(({latitude, longitude}, i) => (
+{locations.map(({_id, latitude, longitude}) => (
   // etc.
 ))}
 ```
@@ -536,7 +535,7 @@ Finally, we need to replace the location pins with a mix of clusters and pins. D
     />
   ) : (
     <Pin
-      key={`marker-${i}`}
+      key={locationData._id}
       lat={latitude}
       lng={longitude}
       onClickAction={() => setActiveLocation(locationData)}
