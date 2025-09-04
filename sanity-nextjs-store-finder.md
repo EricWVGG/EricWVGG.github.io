@@ -232,9 +232,9 @@ const UnhydratedMap = ({ locations }: { locations: Sanity.MapLocationsQueryResul
 export const Map = dynamic(() => Promise.resolve(UnhydratedMap), { ssr: false })
 ```
 
-#### Important fixes here for unexpected behaviors
+#### Important fixes for unexpected behaviors
 
-<strong>NOTE 1</strong>: Google maps requires that the width and height of the map is _explicitly set in the style attribute_. It doesn't have to be in pixels — you'll see that I'm using dvw and dvh units below — but it does have to be in a `style=` attribute. <em>Putting it in a `className` will not work!</em>
+<strong>NOTE 1</strong>: Google maps requires that the width and height of the map are _explicitly set in the style attribute_. It doesn't have to be in pixels — I'm using dvw and dvh units — but it does have to be in a `style=` attribute. <em>Putting it in a `className` will not work!</em>
 
 <strong>NOTE 2</strong>: By default, Google makes certain locations like public parks clickable. That can lead to unexpected results if you have a map pin near one of these locations. `clickableIcons: false` fixes that.
 
@@ -396,7 +396,6 @@ export const Cluster = ({ lat, lng, pointCount, totalPoints, onClickAction }: Cl
   )
 }
 ```
-{% endraw %}
 
 #### Add clusters to `<Map />` component
 
