@@ -63,13 +63,13 @@ export const mapLocationSchema = defineType({
     defineField({
       name: "latitude",
       type: "number",
-      validation: (rule) => rule.min(-90).max(90),
+      validation: (rule) => rule.required().min(-90).max(90),
       fieldset: "coordinates",
     }),
     defineField({
       name: "longitude",
       type: "number",
-      validation: (rule) => rule.min(-180).max(180),
+      validation: (rule) => rule.required().min(-180).max(180),
       fieldset: "coordinates",
     }),
   ],
@@ -86,10 +86,9 @@ export const mapLocationSchema = defineType({
 })
 ```
 
-(Yes, -90 to 90 and -180 to 180 are the valid ranges for latitude and longitude figures!)
+Yes, -90 to 90 and -180 to 180 are the valid ranges for latitude and longitude figures! If you don’t have lat/lng coordinates, I’m going to follow up this tutorial with another on populating Sanity with a spreadsheet of locations and automatically pulling coordinates; for now, just fake it with some made-up numbers.
 
-Add this to your Sanity schema…
-
+Add this to your existing Sanity schema:
 ```typescript
 import { mapLocationSchema } from "./mapLocationSchema"
 
@@ -101,8 +100,7 @@ export const schema: { types: SchemaTypeDefinition[] } = {
 }
 ```
 
-And create a Groq query for retrieval.
-
+And create a Groq query for retrieval: `mapLocationsQuery.ts`
 ```typescript
 import { defineQuery } from "next-sanity"
 
@@ -136,7 +134,7 @@ export const MAP_MAX_ZOOM = 20
 export const GOOGLE_MAPS_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY
 ```
 
-### NextJS Page
+## NextJS Page
 
 Create a new route in NextJS (I’m assuming you’re using the App Router here).
 
@@ -160,7 +158,9 @@ export default async function MapLocationsPage() {
 }
 ```
 
-### React Map component
+## React components
+
+### Map and Pin components
 
 We're going to do this in three steps…
 1. Make a map that shows pins.
@@ -269,9 +269,9 @@ export const Pin = ({ lat, lng, onClick }: PinProps) => (
 )
 ```
 
-This is the basics, you should have a working map now.
+This is the basics, you should have a working map now. 
 
-### Make the map load dynamically
+### Make the Map dynamic
 
 Since this map has a pretty heavy payload of dependencies, we're going to use `next/dynamic` to dynamically load the necessary javascript upon page load.
 
@@ -499,8 +499,8 @@ export const Cluster = ({ lat, lng, pointCount, totalPoints, ...props }: Cluster
     <div
       {...props}
       style={{
-        width: `${length}px`,
-        height: `${length}px`,
+        width: length.toString() + 'px',
+        height: length.toString() + 'px',
         position: 'relative',
         display: 'flex',
         justifyContent: 'center',
