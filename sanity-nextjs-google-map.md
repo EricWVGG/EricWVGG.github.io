@@ -321,30 +321,29 @@ Still here? Okay, let's make a popup that shows a name and address when the user
 First, a little Typescript. When dealing with typegen, it's not uncommon to get a type like…
 
 ```typescript
-interface SomeQueryResult = Array<{
-  someProp: string
-  anotherProp: number
-  yetAnotherProp: string
+interface LocationQueryResult = Array<{
+  name: string
+  streetAddress: city
+  latitude: number // etc.
 }>
 ```
 
 But this sucks when you want to use a single member of the array.
 
 ```typescript
-const [item, setItem] = useState<unknown>()
-setItem(someQueryResult[0])
+const [location, setLocation] = useState<unknown>()
+setItem(locationQueryResult[0])
 ```
 
-`unknown`. Sigh. _You_ know what it is, it's a single instance of the SomeQueryResult array… [`ArrayElement<>` to the rescue](https://stackoverflow.com/a/51399781/82944).
+_You_ know what it is, it's a single instance of the `SomeQueryResult` array… If you’re new to Sanity generated types, you might think that `Sanity.MapLocation` or `Partial<Sanity.MapLocation>` would do the trick, but that doesn't include `_key`, and as soon as you get creative with Groq, nested relationships, or even just images, that approach falls apart fast.
 
-`ArrayElement<T>` is a custom Typescript utility, similar to `Pick<T>` and `Omit<T>`, and wildly useful — the maintainers of Typescript really ought to build it or something similar into the language.
+[`ArrayElement<>` to the rescue](https://stackoverflow.com/a/51399781/82944)! `ArrayElement<T>` is a custom Typescript utility, similar to `Pick<T>` and `Omit<T>`, and wildly useful — the maintainers of Typescript really ought to build it or something similar into the language.
 
 Add this to your `index.d.ts` (if you already have a `global` declaration, just insert the second line there):
 
 ```typescript
 declare global {
-  declare type ArrayElement<ArrayType extends readonly unknown[]> = 
-    ArrayType extends readonly (infer ElementType)[] ? ElementType : never;
+  declare type ArrayElement<ArrayType extends readonly unknown[]> = ArrayType extends readonly (infer ElementType)[] ? ElementType : never;
 }
 ```
 
@@ -359,14 +358,16 @@ Bonus: is the array in question a property of a type?
 
 ```typescript
 interface SomeQueryResult = {
-  items: Array<{
-    someProp: string
-    anotherProp: number
+  locations: Array<{
+    name: string
+    streetAddress: city // etc.
   }>
 }
 
-const [item, setItem] = useState<ArrayElement<SomeQueryResult['items']>>()
+const [item, setItem] = useState<ArrayElement<SomeQueryResult['locations']>>()
 ```
+
+The above example is a pretty good example of Sanity typegen output: because a Groq can do basically anything, it’ll never automatically type `items` as `Array<MapLocation>`. It’s best to think of query results as _resembling_ schema types.
 
 Once you start using `ArrayElement<>`, you’ll wonder how you ever got by without it.
 
