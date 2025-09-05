@@ -117,6 +117,8 @@ export const mapLocationsQuery = defineQuery(`
 `)
 ```
 
+![sanity studio](![image](/sanity-nextjs-store-finder/sanity.png)
+
 ## NextJS Page
 
 I’m assuming you’re using the App Router here, and use some kind of alias imports. If you’re a monster who doesn’t use alias imports, replace `@/` below with hard-coded paths to your Sanity client, the query, and the `Map.tsx` file you'll be making in just a moment.
@@ -286,6 +288,8 @@ Technically it’s not necessary; you may need to remove that if you’re using 
 
 ### That’s it
 
+![map with pins](![image](/sanity-nextjs-store-finder/pins.png)
+
 You should have a working map with pins now. If that’s all you want, clean up the `// insert` comments, pat yourself on the back, and go hit happy hour.
 
 ## Popups
@@ -356,6 +360,8 @@ onClickAction={() => setActiveLocation(location)}
 ```
 
 Recap: we're now tracking an “active location”. Upon clicking a map pin, that location is set. The popup `activeLocation` to derive its copy, and hides itself if no lat/lng is selected.
+
+![map with popup](![image](/sanity-nextjs-store-finder/popup.png)
 
 ## Clusters
 
@@ -548,6 +554,8 @@ Finally, we need to replace the location pins with a mix of clusters and pins. D
 ```
 
 I hope that's pretty straightforward: `useSuperCluster` generates the new mix of Cluster and Pin items; we map over them and output the correct components.
+
+![map with clusters](![image](/sanity-nextjs-store-finder/clusters.png)
 
 Hey cool we’re done :P
 
