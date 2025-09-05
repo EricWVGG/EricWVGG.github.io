@@ -2,11 +2,11 @@
 
 I’ve been asked to install “store locator” widgets a few times over the years. I was surprised to learn that it’s even a product that people pay for! _In this house we build our own shit._
 
-This tutorial assumes you have basic experience in NextJS, Sanity, and Typescript; and that Sanity is set up for automatic type generation. (If you aren't using that last one, you can replace the `Sanity.whatever` types with `unknown` or manually written types… but [boy you are missing out](https://www.sanity.io/docs/apis-and-sdks/sanity-typegen)). And if you’re not using NextJS, these instructions should be very easy to adapt.
+This tutorial assumes you have basic experience in NextJS, Sanity, and Typescript; and that Sanity is set up for automatic type generation. (If you aren't using typegen, you can replace the `Sanity.whatever` types with `unknown` or manually written types… [my dude you are missing out](https://www.sanity.io/docs/apis-and-sdks/sanity-typegen)). And if you’re not using NextJS, these instructions should be very easy to adapt.
 
 You don’t need to know much about Google Maps, but [you will need an API key](https://developers.google.com/maps/documentation/javascript/get-api-key).
 
-// this is a first-draft, haven’t tested this code yet
+This tutorial is deliberately a bit rough. You can see a polished, [production-complete example here](https://boutique-homes.com/search?location=spain).
 
 ## Setup
 
@@ -117,7 +117,7 @@ export const mapLocationsQuery = defineQuery(`
 `)
 ```
 
-![sanity studio](![image](/sanity-nextjs-store-finder/sanity.png)
+![sanity studio](/assets/sanity-nextjs-store-finder/sanity.png)
 
 ## NextJS Page
 
@@ -288,7 +288,7 @@ Technically it’s not necessary; you may need to remove that if you’re using 
 
 ### That’s it
 
-![map with pins](![image](/sanity-nextjs-store-finder/pins.png)
+![map with pins](/assets/sanity-nextjs-store-finder/pins.png)
 
 You should have a working map with pins now. If that’s all you want, clean up the `// insert` comments, pat yourself on the back, and go hit happy hour.
 
@@ -361,7 +361,7 @@ onClickAction={() => setActiveLocation(location)}
 
 Recap: we're now tracking an “active location”. Upon clicking a map pin, that location is set. The popup `activeLocation` to derive its copy, and hides itself if no lat/lng is selected.
 
-![map with popup](![image](/sanity-nextjs-store-finder/popup.png)
+![map with popup](/assets/sanity-nextjs-store-finder/popup.png)
 
 ## Clusters
 
@@ -553,9 +553,9 @@ Finally, we need to replace the location pins with a mix of clusters and pins. D
 })}
 ```
 
-I hope that's pretty straightforward: `useSuperCluster` generates the new mix of Cluster and Pin items; we map over them and output the correct components.
+I hope that's pretty straightforward: `useSuperCluster` generates the new mix of Cluster and Pin items; we map over them and output the correct components. Clicking on a cluster will automatically zoom in and distinguish the pins.
 
-![map with clusters](![image](/sanity-nextjs-store-finder/clusters.png)
+![map with clusters](/assets/sanity-nextjs-store-finder/clusters.png)
 
 Hey cool we’re done :P
 
