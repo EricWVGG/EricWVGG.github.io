@@ -449,10 +449,7 @@ const points = useMemo(() =>
           properties: { cluster: false, locationData: location },
           geometry: {
             type: "Point",
-            coordinates: [
-              location.geoLocation!.longitude,
-              location.geoLocation!.latitude
-            ],
+            coordinates: [location.longitude, location.latitude],
           },
         } as PointFeature<MarkerProperties>)
     ),
