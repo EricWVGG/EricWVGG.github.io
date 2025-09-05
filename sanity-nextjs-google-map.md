@@ -316,12 +316,65 @@ You should have a working map with pins now. If that’s all you want, clean up 
 
 Still here? Okay, let's make a popup that shows a name and address when the user clicks on a pin.
 
+### ArrayElement<> type
+
+First, a little Typescript. When dealing with typegen, it's not uncommon to get a type like…
+
+```typescript
+interface SomeQueryResult = Array<{
+  someProp: string
+  anotherProp: number
+  yetAnotherProp: string
+}>
+```
+
+But this sucks when you want to use a single member of the array.
+
+```typescript
+const [item, setItem] = useState<unknown>()
+setItem(someQueryResult[0])
+```
+
+`unknown`. Sigh. _You_ know what it is, it's a single instance of the SomeQueryResult array… [`ArrayElement<>` to the rescue](https://stackoverflow.com/a/51399781/82944).
+
+`ArrayElement<T>` is a custom Typescript utility, similar to `Pick<T>` and `Omit<T>`, and wildly useful — the maintainers of Typescript really ought to build it or something similar into the language.
+
+Add this to your `index.d.ts` (if you already have a `global` declaration, just insert the second line there):
+
+```typescript
+declare global {
+  declare type ArrayElement<ArrayType extends readonly unknown[]> = 
+    ArrayType extends readonly (infer ElementType)[] ? ElementType : never;
+}
+```
+
+Now this will work:
+
+```typescript
+const [item, setItem] = useState<ArrayElement<SomeQueryResult>>()
+setItem(someQueryResult[0])
+```
+
+Bonus: is the array in question a property of a type?
+
+```typescript
+interface SomeQueryResult = {
+  items: Array<{
+    someProp: string
+    anotherProp: number
+  }>
+}
+
+const [item, setItem] = useState<ArrayElement<SomeQueryResult['items']>>()
+```
+
+Once you start using `ArrayElement<>`, you’ll wonder how you ever got by without it.
+
 ### Popup Component
 
-When I first built one of these, my impulse was to put a popup inside each pin with it's own show/hide state. That approach doesn’t scale well; it’s not uncommon to have hundreds of pins (more on that when we get to clusters).
+When I first built one of these, my impulse was to put a popup inside each pin with it's own show/hide state. That approach doesn’t scale well; it’s not uncommon to have hundreds of pins (more on that when we get to clusters). Instead, we're going to make one `<Popup />` component, with a dynamic position.
 
-Instead, we're going to make one `<Popup />` component, with a dynamic position. Create `Popup.tsx`:
-
+Create `Popup.tsx`:
 {% raw %}
 ```typescript
 "use client"
@@ -329,7 +382,7 @@ Instead, we're going to make one `<Popup />` component, with a dynamic position.
 interface PopupProps {
   lat?: number
   lng?: number
-  location?: Member<Sanity.MapLocationsQueryResult>
+  location?: ArrayElement<Sanity.MapLocationsQueryResult>
 }
 export const Popup = ({ location, ...rest }: PopupProps) => (
   <div
@@ -361,10 +414,10 @@ Replace `// insert: popup imports` with:
 import { Popup } from "./Popup"
 ```
 
-Replace `// insert: popup states` with:
+Replace `// insert: popup states` with this (here’s our friend `Member<>` again!):
 
 ```typescript
-const [activeLocation, setActiveLocation] = useState<Member<Sanity.MapLocationsQueryResult> | null>(null)
+const [activeLocation, setActiveLocation] = useState<ArrayElement<Sanity.MapLocationsQueryResult> | null>(null)
 ```
 
 Replace `{/* insert: popup component */}` with:
