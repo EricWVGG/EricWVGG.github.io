@@ -8,6 +8,8 @@ You don’t need to know much about Google Maps, but [you will need an API key](
 
 This tutorial is deliberately a bit rough. You can see a polished, [production-complete example here](https://boutique-homes.com/search?location=spain).
 
+You can find a [“completed” copy of this tutorial here](http://github.com/EricWVGG/sanity-nextjs-google-map).
+
 ## Setup
 
 We all live in dependency hell!
@@ -92,8 +94,6 @@ export const mapLocationSchema = defineType({
 
 Yes, -90 to 90 and -180 to 180 are the valid ranges for latitude and longitude figures!
 
-If you don’t have lat/lng coordinates, I’m going to follow up this tutorial with [two approaches for getting this data](#follow-up-tutorial); for now, just fake it with some made-up numbers.
-
 Add this to your existing Sanity schema:
 
 ```typescript
@@ -118,6 +118,8 @@ export const mapLocationsQuery = defineQuery(`
 ```
 
 ![sanity studio](/assets/sanity-nextjs-store-finder/sanity.png)
+
+If you don’t have lat/lng coordinates for your data, I’m going to follow up this tutorial with [two approaches for getting this data](#follow-up-tutorial); there is a sample seed file in the “completed” tutorial linked above.
 
 ## NextJS Page
 
