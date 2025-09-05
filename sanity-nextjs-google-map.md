@@ -310,7 +310,8 @@ interface PopupProps {
 export const Popup = ({ location, ...rest }: PopupProps) => (
   <div
     style={{
-      display: !!rest.lat && !!rest.lng ? "block" : "none",
+      position: "absolute",
+      display: !!location ? "block" : "none",
       padding: "4px",
       background: "green",
       color: "white",
@@ -345,7 +346,7 @@ const [activeLocation, setActiveLocation] = useState<Member<Sanity.MapLocationsQ
 Replace `{/* insert: popup component */}` with:
 
 ```typescript
-<Popup location={activeLocation || undefined} lat={activeLocation?.geoLocation?.latitude} lng={activeLocation?.geoLocation?.longitude} />
+<Popup location={activeLocation || undefined} lat={activeLocation?.latitude} lng={activeLocation?.longitude} />
 ```
 
 Replace `// insert: popup pin clicks` with:
