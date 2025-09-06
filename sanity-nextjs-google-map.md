@@ -4,11 +4,9 @@ I’ve been asked to install “store locator” widgets a few times over the ye
 
 This tutorial assumes you have basic experience in NextJS, Sanity, and Typescript; and that Sanity is set up for automatic type generation. (If you aren't using typegen, you can replace the `Sanity.whatever` types with `unknown` or manually written types… [my dude you are missing out](https://www.sanity.io/docs/apis-and-sdks/sanity-typegen)). And if you’re not using NextJS, these instructions should be very easy to adapt.
 
-You don’t need to know much about Google Maps, but [you will need an API key](https://developers.google.com/maps/documentation/javascript/get-api-key).
+This tutorial is deliberately a bit rough. You can see [a polished, production-complete example here](https://boutique-homes.com/search?location=spain).
 
-This tutorial is deliberately a bit rough. You can see a polished, [production-complete example here](https://boutique-homes.com/search?location=spain).
-
-You can find a [“completed” copy of this tutorial here](http://github.com/EricWVGG/sanity-nextjs-google-map).
+You can [download a working copy of this tutorial here](http://github.com/EricWVGG/sanity-nextjs-google-map).
 
 ## Setup
 
@@ -18,7 +16,7 @@ We all live in dependency hell!
 npm install google-map-react usehooks-ts
 ```
 
-In your .env file, add your Google Maps API key:
+In your .env file, add your [you will need an API key](https://developers.google.com/maps/documentation/javascript/get-api-key):
 
 ```
 NEXT_PUBLIC_GOOGLE_MAPS_KEY=some-string-from-google
@@ -119,7 +117,14 @@ export const mapLocationsQuery = defineQuery(`
 
 ![sanity studio](/assets/sanity-nextjs-store-finder/sanity.png)
 
-If you don’t have lat/lng coordinates for your data, I’m going to follow up this tutorial with [two approaches for getting this data](#follow-up-tutorial); there is a sample seed file in the “completed” tutorial linked above.
+If you don’t have lat/lng coordinates for your data, I’m going to follow up this tutorial with [two approaches for retrieving coordinates](#follow-up-tutorial).
+
+### Optional: seed with demo data.
+
+If you’d like to start out with some seed data, [save this file as `seed.ndjson`](https://raw.githubusercontent.com/EricWVGG/sanity-nextjs-google-map/refs/heads/main/seed.ndjson) to your project folder, and run on the terminal:
+```
+npx sanity dataset import seed.ndjson production
+```
 
 ## NextJS Page
 
@@ -147,8 +152,6 @@ We're going to do the rest of this in three steps…
 3. [Add "clusters" for closely set pins.](#clusters)
 
 If all you want is a map with pins, steps 2 and 3 are totally optional!
-
-I’ve added "insertion points" to make the latter steps easier; just ignore them for now.
 
 ## Basic map with pins
 
@@ -215,13 +218,13 @@ Create a new component called `Map.tsx`:
 ```typescript
 'use client'
 
+// imports
 import { GoogleMapReact } from 'google-map-react'
 import { useState, useMemo, useRef } from 'react'
 import { useWindowSize } from 'usehooks-ts'
 import { Pin } from './Pin'
-// insert: popup imports
-// insert: cluster imports
 
+// constants
 const MAP_DEFAULT_LAT = 41.8277584
 const MAP_DEFAULT_LNG = -87.6620778
 const MAP_DEFAULT_ZOOM = 10
@@ -229,18 +232,16 @@ const MAP_CLUSTER_RADIUS = 120
 const MAP_MAX_ZOOM = 20
 const GOOGLE_MAPS_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY
 
+// component
 const UnhydratedMap = ({ locations }: { locations: Sanity.MapLocationsQueryResult }) => {
+  // states
+
+  // data
+
+  // hooks
   const { width } = useWindowSize()
 
-  // insert: popup states
-
-  // insert: cluster states
-
-  // insert: cluster points
-
-  // insert: cluster hook
-
-  // insert: cluster click action
+  // actions
   
   return (
     <main
@@ -251,6 +252,7 @@ const UnhydratedMap = ({ locations }: { locations: Sanity.MapLocationsQueryResul
       }} 
     >
       <GoogleMapReact
+        // map options
         bootstrapURLKeys={{ key: googleMapsKey }}
         defaultZoom={defaultZoom}
         options={{
@@ -261,7 +263,6 @@ const UnhydratedMap = ({ locations }: { locations: Sanity.MapLocationsQueryResul
           lat: MAP_DEFAULT_LAT,
           lng: MAP_DEFAULT_LNG
         }}
-        // insert: cluster map capabilities
       >
         {locations
           .filter(location => !!location.latitude && !!location.longitude)
@@ -270,13 +271,11 @@ const UnhydratedMap = ({ locations }: { locations: Sanity.MapLocationsQueryResul
               key={location._id}
               lat={location.latitude}
               lng={location.longitude}
-              // insert: popup pin clicks
+              // onClick
             />
         ))}
 
-        {/* insert: cluster components */}
-
-        {/* insert: popup component */}
+        {/* map children */}
       </GoogleMapReact>
 
       {/* see NOTE 3 */}
@@ -286,7 +285,8 @@ const UnhydratedMap = ({ locations }: { locations: Sanity.MapLocationsQueryResul
     </main>
   )
 }
-// insert: cluster marker type
+
+// types
 
 export const Map = dynamic(() => Promise.resolve(UnhydratedMap), { ssr: false })
 ```
@@ -409,25 +409,25 @@ export const Popup = ({ location, ...rest }: PopupProps) => (
 
 ### Add the Popup and functionality to the Map component.
 
-Replace `// insert: popup imports` with:
+Insert after `// imports`:
 
 ```typescript
 import { Popup } from "./Popup"
 ```
 
-Replace `// insert: popup states` with this (here’s our friend `Member<>` again!):
+Insert this after `// states` (here’s our friend `ArrayElement<>` again!):
 
 ```typescript
 const [activeLocation, setActiveLocation] = useState<ArrayElement<Sanity.MapLocationsQueryResult> | null>(null)
 ```
 
-Replace `{/* insert: popup component */}` with:
+Insert after `{/* map children */}`:
 
 ```typescript
 <Popup location={activeLocation || undefined} lat={activeLocation?.latitude} lng={activeLocation?.longitude} />
 ```
 
-Replace `// insert: popup pin clicks` with:
+Replace `// onClick` with:
 
 ```typescript
 onClickAction={() => setActiveLocation(location)}
@@ -502,7 +502,7 @@ There’s a lot of steps here, so I’ve done my best to make them very granular
 npm install supercluster use-supercluster
 ```
 
-Replace `// insert: cluster imports` with:
+Add to `// imports`:
 
 ```typescript
 import useSupercluster from "use-supercluster"
@@ -510,7 +510,7 @@ import { type PointFeature } from "supercluster"
 import { Cluster } from "./Cluster"
 ```
 
-Replace `// insert: cluster states` with:
+Insert after `// states`:
 
 ```typescript
 const [bounds, setBounds] = useState<[number, number, number, number]>([0, 0, 0, 0])
@@ -520,7 +520,7 @@ const mapRef = useRef<any>(null)
 
 Instead of simply mapping over the locations, we need to map over structured points that can be read by SuperCluster. To avoid rebuilding this array on every component render, we’ll use `useMemo()` to emsmarten things.
 
-Replace `// insert: cluster points` with:
+Insert after `// data`:
 
 ```typescript
 const points = useMemo(() =>
@@ -541,7 +541,7 @@ const points = useMemo(() =>
 )
 ```
 
-And replace `// insert: cluster marker type` with:
+Insert after `// types`:
 
 ```typescript
 interface MarkerProperties {
@@ -553,7 +553,7 @@ interface MarkerProperties {
 }
 ```
 
-Now we’ll set up a hook that turns our map points into a mix of clusters and pins. Replace `// insert: cluster hook` with:
+Now we’ll set up a hook that turns our map points into a mix of clusters and pins. Insert after `// hooks`:
 
 ```typescript
 const { clusters, supercluster } = useSupercluster({
@@ -567,7 +567,7 @@ const { clusters, supercluster } = useSupercluster({
 })
 ```
 
-We’ll need a click action for the cluster markers. Replace `// insert: cluster click action` with:
+We’ll need a click action for the cluster markers. Insert after `// actions`:
 
 ```typescript
 const zoomOnCluster = (clusterId: number | string, lat: number, lng: number) => {
@@ -583,7 +583,7 @@ const zoomOnCluster = (clusterId: number | string, lat: number, lng: number) => 
 }
 ```
 
-We need to give the Map the ability to update the zoom and bounds from our code. Replace `// insert: cluster map capabilities` with these attributes:
+We need to give the Map the ability to update the zoom and bounds from our code. Insert after `// map options`:
 
 ```typescript
 yesIWantToUseGoogleMapApiInternals
@@ -604,7 +604,7 @@ Finally, we need to replace the location pins with a mix of clusters and pins. D
 ))}
 ```
 
-… and replace `{/* insert: cluster components */}` with:
+… and replace it with:
 
 ```typescript
 {clusters.map((mapItem) => {
